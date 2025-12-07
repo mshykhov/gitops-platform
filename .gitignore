@@ -1,0 +1,35 @@
+# Environment
+.env
+.env.local
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*/build/
+*/dist/
+*/node_modules/
+*/.gradle/
+
+# Secrets (никогда не коммитить)
+**/secrets/
+*.pem
+*.key
+id_rsa*
+*.p12
+
+# Helm
+**/charts/*.tgz
+**/Chart.lock
+
+# Temporary
+*.tmp
+*.log
+*.swp
