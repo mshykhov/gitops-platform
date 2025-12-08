@@ -1,0 +1,16 @@
+# =============================================================================
+# PRD ENVIRONMENT OVERRIDES
+# =============================================================================
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+extraEnv:
+  - name: LOG_LEVEL
+    value: "info"

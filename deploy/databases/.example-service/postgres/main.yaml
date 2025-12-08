@@ -1,0 +1,18 @@
+# =============================================================================
+# POSTGRESQL CLUSTER - example-service
+# =============================================================================
+# Base configuration for CloudNativePG cluster
+# Environment-specific overrides in main-dev.yaml and main-prd.yaml
+# =============================================================================
+cluster:
+  name: example-service-main-db
+
+  storage:
+    size: 1Gi
+    # storageClass: longhorn  # Set in environment file
+
+  # Backup configuration
+  backup:
+    enabled: true
+    schedule: "0 2 * * 0"  # Weekly at 2 AM Sunday
+    retentionPolicy: "7d"

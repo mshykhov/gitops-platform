@@ -1,0 +1,21 @@
+# =============================================================================
+# PRD ENVIRONMENT - PostgreSQL
+# =============================================================================
+cluster:
+  instances: 2
+
+  storage:
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retentionPolicy: "30d"
