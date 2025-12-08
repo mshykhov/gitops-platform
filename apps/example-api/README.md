@@ -78,7 +78,7 @@ docker run -p 8080:8080 \
 
 ## Auth0 Setup
 
-See [Auth0 Setup Guide](../docs/auth0-setup.md) for detailed instructions.
+See [Auth0 Setup Guide](../../docs/auth0-setup.md) for detailed instructions.
 
 **Quick summary**: Create API in Auth0 Dashboard, copy `Domain` → `AUTH0_DOMAIN` and `Identifier` → `AUTH0_AUDIENCE`.
 
@@ -116,7 +116,7 @@ GitHub Actions workflow (`.github/workflows/release.yaml`) builds and pushes Doc
 
 **Trigger**: Push tag `v*.*.*` (e.g., `v1.0.0`, `v1.0.0-beta.1`)
 
-**Required secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` ([setup guide](../docs/github-secrets.md))
+**Required secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` ([setup guide](../../docs/github-secrets.md))
 
 ```bash
 # Create release
