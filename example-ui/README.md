@@ -14,23 +14,28 @@ React SPA for testing backend APIs with Auth0 authentication.
 ```bash
 npm install
 cp .env.example .env.local
-# Edit .env.local with your values
+# Edit .env.local with your Auth0 credentials
 npm run dev
 ```
 
+Open http://localhost:5173
+
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|:--------:|
-| `API_URL` | Backend API URL | Yes |
-| `AUTH0_DOMAIN` | Auth0 tenant domain | Yes |
-| `AUTH0_CLIENT_ID` | Auth0 SPA client ID | Yes |
-| `AUTH0_AUDIENCE` | Auth0 API identifier | No |
+| Variable | Description | Required | Example |
+|----------|-------------|:--------:|---------|
+| `API_URL` | Backend API URL | Yes | `http://localhost:8080` |
+| `AUTH0_DOMAIN` | Auth0 tenant domain | Yes | `dev-abc123.us.auth0.com` |
+| `AUTH0_CLIENT_ID` | Auth0 SPA client ID | Yes | `aBcDeFgHiJkLmNoPqRsTuVwXyZ123456` |
+| `AUTH0_AUDIENCE` | Auth0 API identifier | No | `https://api.example.com` |
 
-### Example `.env.local`
+### Example `.env.local` (local development)
 
 ```bash
-API_URL=https://api.example.com
+# Local API
+API_URL=http://localhost:8080
+
+# Auth0 credentials (replace with your values)
 AUTH0_DOMAIN=dev-abc123.us.auth0.com
 AUTH0_CLIENT_ID=aBcDeFgHiJkLmNoPqRsTuVwXyZ123456
 AUTH0_AUDIENCE=https://api.example.com
@@ -48,8 +53,10 @@ AUTH0_AUDIENCE=https://api.example.com
 ## Docker
 
 ```bash
+# Build
 docker build -t example-ui .
 
+# Run (production)
 docker run -p 8080:8080 \
   -e API_URL=https://api.example.com \
   -e AUTH0_DOMAIN=dev-abc123.us.auth0.com \
@@ -63,13 +70,13 @@ docker run -p 8080:8080 \
 
 ### 1. Create Application
 
-1. Go to [Auth0 Dashboard](https://manage.auth0.com/) → Applications → Create Application
+1. Go to [Auth0 Dashboard](https://manage.auth0.com/) → **Applications** → **Create Application**
 2. Select **Single Page Web Applications**
 3. Name it (e.g., `Example UI`)
 
 ### 2. Configure URLs
 
-In Application Settings, add your URLs:
+In **Application Settings**, add your URLs:
 
 | Setting | Development | Production |
 |---------|-------------|------------|
@@ -77,20 +84,22 @@ In Application Settings, add your URLs:
 | Allowed Logout URLs | `http://localhost:5173` | `https://app.example.com` |
 | Allowed Web Origins | `http://localhost:5173` | `https://app.example.com` |
 
-> **Tip**: Separate multiple URLs with commas
+> **Tip**: Separate multiple URLs with commas (e.g., `http://localhost:5173, https://app.example.com`)
 
 ### 3. Copy Credentials
 
-From Application Settings, copy:
+From **Application Settings**, copy to `.env.local`:
 
-- **Domain** → `AUTH0_DOMAIN` (e.g., `dev-abc123.us.auth0.com`)
-- **Client ID** → `AUTH0_CLIENT_ID` (e.g., `aBcDeFgHiJkLmNoPqRsTuVwXyZ123456`)
+| Auth0 Field | Environment Variable |
+|-------------|---------------------|
+| Domain | `AUTH0_DOMAIN` |
+| Client ID | `AUTH0_CLIENT_ID` |
 
 ### 4. (Optional) Create API
 
-If your backend requires authentication:
+If your backend requires token validation:
 
-1. Go to Applications → APIs → Create API
+1. Go to **Applications** → **APIs** → **Create API**
 2. Set **Identifier** (e.g., `https://api.example.com`)
 3. Copy Identifier → `AUTH0_AUDIENCE`
 
