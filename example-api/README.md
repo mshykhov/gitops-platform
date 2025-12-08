@@ -13,31 +13,43 @@ Spring Boot REST API with OAuth2/JWT authentication, PostgreSQL, and Redis cachi
 ## Quick Start
 
 ```bash
+# Start PostgreSQL and Redis
 docker compose up -d
+
+# Configure environment
 cp .env.example .env
-# Edit .env with your values
+# Edit .env with your Auth0 credentials
+
+# Run application
 ./gradlew bootRun
 ```
 
+Open http://localhost:8080
+
+**Swagger UI**: http://localhost:8080/swagger-ui.html
+
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|:--------:|
-| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL | Yes |
-| `SPRING_DATASOURCE_USERNAME` | Database username | Yes |
-| `SPRING_DATASOURCE_PASSWORD` | Database password | Yes |
-| `AUTH0_DOMAIN` | OAuth2 issuer domain | Yes |
-| `AUTH0_AUDIENCE` | OAuth2 API identifier | Yes |
-| `SPRING_DATA_REDIS_HOST` | Redis host | No |
-| `SPRING_DATA_REDIS_PORT` | Redis port | No |
-| `SERVER_PORT` | HTTP port (default: 8080) | No |
+| Variable | Description | Required | Example |
+|----------|-------------|:--------:|---------|
+| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL | Yes | `jdbc:postgresql://localhost:5432/example_api` |
+| `SPRING_DATASOURCE_USERNAME` | Database username | Yes | `example_api` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | Yes | `example_api` |
+| `AUTH0_DOMAIN` | OAuth2 issuer domain | Yes | `dev-abc123.us.auth0.com` |
+| `AUTH0_AUDIENCE` | OAuth2 API identifier | Yes | `https://api.example.com` |
+| `SPRING_DATA_REDIS_HOST` | Redis host | No | `localhost` |
+| `SPRING_DATA_REDIS_PORT` | Redis port | No | `6379` |
+| `SERVER_PORT` | HTTP port | No | `8080` |
 
-### Example `.env`
+### Example `.env` (local development)
 
 ```bash
+# Database (provided by docker compose)
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/example_api
 SPRING_DATASOURCE_USERNAME=example_api
 SPRING_DATASOURCE_PASSWORD=example_api
+
+# Auth0 credentials (replace with your values)
 AUTH0_DOMAIN=dev-abc123.us.auth0.com
 AUTH0_AUDIENCE=https://api.example.com
 ```
@@ -66,18 +78,9 @@ docker run -p 8080:8080 \
 
 ## Auth0 Setup
 
-> **Docs**: [Auth0 API Authorization](https://auth0.com/docs/get-started/apis)
+See [Auth0 Setup Guide](../docs/auth0-setup.md) for detailed instructions.
 
-### 1. Create API
-
-1. Go to [Auth0 Dashboard](https://manage.auth0.com/) → Applications → APIs → Create API
-2. Set **Name** (e.g., `Example API`)
-3. Set **Identifier** (e.g., `https://api.example.com`)
-
-### 2. Copy Credentials
-
-- **Domain** → `AUTH0_DOMAIN` (e.g., `dev-abc123.us.auth0.com`)
-- **Identifier** → `AUTH0_AUDIENCE` (e.g., `https://api.example.com`)
+**Quick summary**: Create API in Auth0 Dashboard, copy `Domain` → `AUTH0_DOMAIN` and `Identifier` → `AUTH0_AUDIENCE`.
 
 ## API Endpoints
 
@@ -106,6 +109,20 @@ docker run -p 8080:8080 \
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/admin/stats` | Server stats |
+
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/release.yaml`) builds and pushes Docker image on semver tags.
+
+**Trigger**: Push tag `v*.*.*` (e.g., `v1.0.0`, `v1.0.0-beta.1`)
+
+**Required secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` ([setup guide](../docs/github-secrets.md))
+
+```bash
+# Create release
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## Configuration
 

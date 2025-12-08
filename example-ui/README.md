@@ -66,44 +66,9 @@ docker run -p 8080:8080 \
 
 ## Auth0 Setup
 
-> **Docs**: [Auth0 React Quickstart](https://auth0.com/docs/quickstart/spa/react/interactive)
+See [Auth0 Setup Guide](../docs/auth0-setup.md) for detailed instructions.
 
-### 1. Create Application
-
-1. Go to [Auth0 Dashboard](https://manage.auth0.com/) → **Applications** → **Create Application**
-2. Select **Single Page Web Applications**
-3. Name it (e.g., `Example UI`)
-
-### 2. Configure URLs
-
-In **Application Settings**, add your URLs:
-
-| Setting | Development | Production |
-|---------|-------------|------------|
-| Allowed Callback URLs | `http://localhost:5173` | `https://app.example.com` |
-| Allowed Logout URLs | `http://localhost:5173` | `https://app.example.com` |
-| Allowed Web Origins | `http://localhost:5173` | `https://app.example.com` |
-
-> **Tip**: Separate multiple URLs with commas (e.g., `http://localhost:5173, https://app.example.com`)
-
-### 3. Copy Credentials
-
-From **Application Settings**, copy to `.env.local`:
-
-| Auth0 Field | Environment Variable |
-|-------------|---------------------|
-| Domain | `AUTH0_DOMAIN` |
-| Client ID | `AUTH0_CLIENT_ID` |
-
-### 4. (Optional) Create API
-
-If your backend requires token validation:
-
-1. Go to **Applications** → **APIs** → **Create API**
-2. Set **Identifier** (e.g., `https://api.example.com`)
-3. Copy Identifier → `AUTH0_AUDIENCE`
-
-> **Docs**: [Auth0 API Authorization](https://auth0.com/docs/get-started/apis)
+**Quick summary**: Create SPA application in Auth0 Dashboard, copy `Domain` → `AUTH0_DOMAIN` and `Client ID` → `AUTH0_CLIENT_ID`.
 
 ## CI/CD
 
