@@ -1,0 +1,51 @@
+# =============================================================================
+# EXTERNAL-DNS
+# =============================================================================
+# Docs: https://github.com/kubernetes-sigs/external-dns
+#
+# Automatically creates DNS records in Cloudflare based on Ingress annotations.
+# Works with Cloudflare Tunnel - creates CNAME records pointing to tunnel.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "13"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: network
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/external-dns
+      chart: external-dns
+      targetRevision: "1.15.0"
+      helm:
+        valueFiles:
+          - $values/helm-values/network/external-dns.yaml
+        valuesObject:
+          domainFilters:
+            - {{ .Values.global.domain }}
+    - repoURL: {{ .Values.spec.source.repoURL }}
+      targetRevision: {{ .Values.spec.source.targetRevision }}
+      ref: values
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        tier: network
+        team: platform
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

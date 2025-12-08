@@ -1,0 +1,52 @@
+# =============================================================================
+# KUBE-PROMETHEUS-STACK
+# =============================================================================
+# Wrapper chart with templated Alertmanager config
+# Includes: Prometheus, Grafana, AlertManager, Node Exporter, kube-state-metrics
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: monitoring
+  source:
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    path: charts/kube-prometheus-stack
+    helm:
+      skipCrds: false
+      valuesObject:
+        global:
+          telegram:
+            chatId: {{ .Values.global.telegram.chatId | quote }}
+            topics:
+              critical: {{ .Values.global.telegram.topics.critical | quote }}
+              warning: {{ .Values.global.telegram.topics.warning | quote }}
+              info: {{ .Values.global.telegram.topics.info | quote }}
+              deploys: {{ .Values.global.telegram.topics.deploys | quote }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        tier: monitoring
+        team: platform
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

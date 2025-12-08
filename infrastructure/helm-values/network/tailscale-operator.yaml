@@ -1,0 +1,25 @@
+operatorConfig:
+  defaultTags:
+    - "tag:k8s-operator"
+  hostname: "tailscale-operator"
+  logging: "info"
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+proxyConfig:
+  defaultTags: "tag:k8s"
+
+apiServerProxyConfig:
+  mode: "true"
+  allowImpersonation: "true"
+
+oauth: {}
+
+oauthSecretVolume:
+  secret:
+    secretName: tailscale-oauth

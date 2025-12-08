@@ -1,0 +1,48 @@
+# =============================================================================
+# CLOUDFLARE TUNNEL (locally-managed)
+# =============================================================================
+# Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+#
+# All traffic routed to nginx-ingress via catch-all rule.
+# DNS records created automatically by External-DNS.
+#
+# Doppler secrets: CF_TUNNEL_CREDENTIALS
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudflare-tunnel
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "21"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: network
+  source:
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    path: charts/cloudflare-tunnel
+    helm:
+      valuesObject:
+        tunnel:
+          uuid: {{ .Values.global.cloudflare.tunnelId }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: cloudflare
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        tier: network
+        team: platform
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

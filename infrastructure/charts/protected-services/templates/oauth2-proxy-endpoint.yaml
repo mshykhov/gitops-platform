@@ -1,0 +1,48 @@
+{{- $seenNamespaces := dict -}}
+{{- range $name, $service := .Values.services }}
+{{- if and $service.enabled (ne $service.oauth2 false) }}
+{{- if not (hasKey $seenNamespaces $service.namespace) }}
+{{- $_ := set $seenNamespaces $service.namespace true }}
+---
+# ExternalName service to reference oauth2-proxy from another namespace
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: {{ $service.namespace }}
+spec:
+  type: ExternalName
+  externalName: oauth2-proxy.oauth2-proxy.svc.cluster.local
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+{{- end }}
+---
+# Ingress for oauth2-proxy endpoints on this host
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}-oauth2
+  namespace: {{ $service.namespace }}
+  {{- if $service.hostname }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ $service.hostname }}
+    external-dns.alpha.kubernetes.io/target: {{ $.Values.global.cloudflare.tunnelId }}.cfargotunnel.com
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  {{- end }}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ if $service.hostname }}{{ $service.hostname }}{{ else }}{{ $name }}.{{ $.Values.global.tailnet }}.ts.net{{ end }}
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80
+{{- end }}
+{{- end }}

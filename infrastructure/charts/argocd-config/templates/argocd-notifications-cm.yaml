@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  service.telegram: |
+    token: $telegram-token
+
+  context: |
+    argocdUrl: https://argocd.{{ .Values.global.tailnet }}.ts.net
+
+  template.app-deployed: |
+    message: |
+      {{`{{- $revision := .app.status.sync.revision -}}`}}
+      {{`{{- $shortRev := (trunc 7 $revision) -}}`}}
+      {{`{{- $repoURL := "" -}}`}}
+      {{`{{- if .app.spec.source -}}`}}
+        {{`{{- $repoURL = .app.spec.source.repoURL -}}`}}
+      {{`{{- else if .app.spec.sources -}}`}}
+        {{`{{- $repoURL = (index .app.spec.sources 0).repoURL -}}`}}
+      {{`{{- end -}}`}}
+      {{`{{- $httpsURL := $repoURL -}}`}}
+      {{`{{- if hasPrefix "git@github.com:" $repoURL -}}`}}
+        {{`{{- $httpsURL = printf "https://github.com/%s" (trimSuffix ".git" (trimPrefix "git@github.com:" $repoURL)) -}}`}}
+      {{`{{- else -}}`}}
+        {{`{{- $httpsURL = trimSuffix ".git" $repoURL -}}`}}
+      {{`{{- end -}}`}}
+      ✅ *{{`{{ .app.metadata.name }}`}}*
+
+      📦 Deployed successfully
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+      {{`{{- if contains "github.com" $repoURL }}`}}
+      🔗 Revision: [{{`{{ $shortRev }}`}}]({{`{{ $httpsURL }}`}}/commit/{{`{{ $revision }}`}})
+      {{`{{- else }}`}}
+      🔗 Revision: `{{`{{ $shortRev }}`}}`
+      {{`{{- end }}`}}
+      {{`{{- if .app.status.summary.images }}`}}
+      {{`{{- $images := .app.status.summary.images }}`}}
+      {{`{{- $imageCount := len $images }}`}}
+      {{`{{- if eq $imageCount 1 }}`}}
+      🔄 Config sync
+      🐳 `{{`{{ index $images 0 }}`}}`
+      {{`{{- else if eq $imageCount 2 }}`}}
+      🆕 Image update:
+        Old: `{{`{{ index $images 0 }}`}}`
+        New: `{{`{{ index $images 1 }}`}}`
+      {{`{{- else }}`}}
+      🐳 Images:
+      {{`{{- range $img := $images }}`}}
+        • `{{`{{ $img }}`}}`
+      {{`{{- end }}`}}
+      {{`{{- end }}`}}
+      {{`{{- end }}`}}
+
+      🔗 [Open in ArgoCD]({{`{{ .context.argocdUrl }}`}}/applications/{{`{{ .app.metadata.name }}`}})
+
+  template.app-sync-failed: |
+    message: |
+      ❌ *{{`{{ .app.metadata.name }}`}}*
+
+      🚫 Sync failed
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+      {{`{{- if .app.status.operationState.message }}`}}
+      ⚠️ Error: {{`{{ .app.status.operationState.message | trunc 200 }}`}}
+      {{`{{- end }}`}}
+      {{`{{- range $c := .app.status.conditions }}`}}
+      • {{`{{ $c.type }}`}}: {{`{{ $c.message | trunc 100 }}`}}
+      {{`{{- end }}`}}
+
+      🔗 [View Details]({{`{{ .context.argocdUrl }}`}}/applications/{{`{{ .app.metadata.name }}`}}?operation=true)
+
+  template.app-health-degraded: |
+    message: |
+      ⚠️ *{{`{{ .app.metadata.name }}`}}*
+
+      💔 Health degraded
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+      📊 Status: `{{`{{ .app.status.health.status }}`}}`
+      {{`{{- range $c := .app.status.conditions }}`}}
+      • {{`{{ $c.type }}`}}: {{`{{ $c.message | trunc 100 }}`}}
+      {{`{{- end }}`}}
+
+      🔗 [Open in ArgoCD]({{`{{ .context.argocdUrl }}`}}/applications/{{`{{ .app.metadata.name }}`}})
+
+  template.app-sync-status-unknown: |
+    message: |
+      ❓ *{{`{{ .app.metadata.name }}`}}*
+
+      🔍 Sync status unknown
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+      {{`{{- range $c := .app.status.conditions }}`}}
+      • {{`{{ $c.type }}`}}: {{`{{ $c.message | trunc 100 }}`}}
+      {{`{{- end }}`}}
+
+      🔗 [Open in ArgoCD]({{`{{ .context.argocdUrl }}`}}/applications/{{`{{ .app.metadata.name }}`}})
+
+  template.app-created: |
+    message: |
+      🆕 *{{`{{ .app.metadata.name }}`}}*
+
+      📝 Application created
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+      📂 Project: `{{`{{ .app.spec.project }}`}}`
+
+      🔗 [Open in ArgoCD]({{`{{ .context.argocdUrl }}`}}/applications/{{`{{ .app.metadata.name }}`}})
+
+  template.app-deleted: |
+    message: |
+      🗑 *{{`{{ .app.metadata.name }}`}}*
+
+      ❌ Application deleted
+      🏷 Namespace: `{{`{{ .app.spec.destination.namespace }}`}}`
+
+  trigger.on-deployed: |
+    - description: Application is synced and healthy.
+      oncePer: app.status.operationState?.syncResult?.revision
+      send:
+        - app-deployed
+      when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+
+  trigger.on-sync-failed: |
+    - description: Application syncing has failed
+      oncePer: app.status.operationState?.syncResult?.revision
+      send:
+        - app-sync-failed
+      when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
+
+  trigger.on-health-degraded: |
+    - description: Application has degraded
+      oncePer: app.status.operationState?.syncResult?.revision
+      send:
+        - app-health-degraded
+      when: app.status.health.status == 'Degraded'
+
+  trigger.on-sync-status-unknown: |
+    - description: Application status is 'Unknown'
+      oncePer: app.status.operationState?.syncResult?.revision
+      send:
+        - app-sync-status-unknown
+      when: app.status.sync.status == 'Unknown'
+
+  trigger.on-created: |
+    - description: Application is created.
+      oncePer: app.metadata.name
+      send:
+        - app-created
+      when: "true"
+
+  trigger.on-deleted: |
+    - description: Application is deleted.
+      oncePer: app.metadata.name
+      send:
+        - app-deleted
+      when: app.metadata.deletionTimestamp != nil
+
+  subscriptions: |
+    # Deploy notifications - only for apps with deploy-notify=true label
+    - recipients:
+        - telegram:{{ .Values.global.telegram.chatId }}|{{ .Values.global.telegram.topics.deploys }}
+      selector: deploy-notify=true
+      triggers:
+        - on-deployed
+    # Critical notifications - all apps
+    - recipients:
+        - telegram:{{ .Values.global.telegram.chatId }}|{{ .Values.global.telegram.topics.critical }}
+      triggers:
+        - on-sync-failed
+    # Warning notifications - all apps
+    - recipients:
+        - telegram:{{ .Values.global.telegram.chatId }}|{{ .Values.global.telegram.topics.warning }}
+      triggers:
+        - on-health-degraded
+        - on-sync-status-unknown
+    # Info notifications - all apps (audit)
+    - recipients:
+        - telegram:{{ .Values.global.telegram.chatId }}|{{ .Values.global.telegram.topics.info }}
+      triggers:
+        - on-created
+        - on-deleted
