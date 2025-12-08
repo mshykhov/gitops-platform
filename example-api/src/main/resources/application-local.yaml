@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/example_api
+    username: example_api
+    password: example_api
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  pattern:
+    console: '%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{36}) - %msg%n'
