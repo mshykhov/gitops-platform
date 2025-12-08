@@ -1,0 +1,19 @@
+# Cloudflare Tunnel - Locally Managed
+# All traffic routed to nginx-ingress (catch-all rule)
+
+tunnel:
+  uuid: ""  # Set via global.cloudflare.tunnelId
+
+replicas: 2
+
+image:
+  repository: cloudflare/cloudflared
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

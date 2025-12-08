@@ -1,0 +1,37 @@
+# Monitoring
+# https://longhorn.io/docs/1.10.0/monitoring/prometheus-and-grafana-setup/
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack
+
+longhornUI:
+  replicas: 1
+
+longhornConversionWebhook:
+  replicas: 1
+
+longhornAdmissionWebhook:
+  replicas: 1
+
+longhornRecoveryBackend:
+  replicas: 1
+
+persistence:
+  defaultClassReplicaCount: 1
+
+csi:
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+defaultSettings:
+  guaranteedEngineManagerCPU: 5
+  guaranteedReplicaManagerCPU: 5
+  concurrentReplicaRebuildPerNodeLimit: 2
+  concurrentVolumeBackupRestorePerNodeLimit: 2
+  storageOverProvisioningPercentage: 200
+  storageMinimalAvailablePercentage: 10
+  replicaNodeLevelSoftAntiAffinity: true

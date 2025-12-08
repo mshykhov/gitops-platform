@@ -1,0 +1,2 @@
+# ArgoCD config values (RBAC handled by oauth2-proxy)
+argocd: {}

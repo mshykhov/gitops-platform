@@ -1,0 +1,105 @@
+# =============================================================================
+# APPLICATIONSET - POSTGRESQL CLUSTERS × SERVICES × ENVIRONMENTS
+# =============================================================================
+# Docs: https://cloudnative-pg.io/documentation/current/
+# Chart: https://github.com/cloudnative-pg/charts/tree/main/charts/cluster
+#
+# Matrix Generator: databases/*/postgres/*.yaml × environments (dev, prd)
+# Each microservice can have multiple PostgreSQL clusters.
+#
+# Structure:
+#   databases/<service>/postgres/<db-name>.yaml
+#   databases/<service>/postgres/<db-name>-<env>.yaml  (optional, per-env overrides)
+#
+# Examples:
+#   databases/example-api/postgres/main.yaml          → base config (all envs)
+#   databases/example-api/postgres/main-dev.yaml      → dev overrides (optional)
+#   databases/example-api/postgres/main-prd.yaml      → prd overrides (optional)
+#
+# Value precedence (lowest to highest):
+#   1. Environment defaults (helm-values/data/postgres-<env>-defaults.yaml)
+#   2. Service config (databases/<service>/postgres/<db>.yaml)
+#   3. Service + env config (databases/<service>/postgres/<db>-<env>.yaml)
+#
+# CloudNativePG auto-generates secrets: <cluster-name>-app
+# Contains: username, password, uri, jdbc-uri, host, port, dbname
+#
+# Services created by CloudNativePG:
+#   <cluster-name>-rw  → primary (read/write)
+#   <cluster-name>-ro  → replicas (read-only)
+#   <cluster-name>-r   → any instance (read)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: postgres-clusters
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - env: dev
+                - env: prd
+          - git:
+              repoURL: {{ .Values.deploy.repoURL }}
+              revision: {{ .Values.deploy.targetRevision }}
+              files:
+                - path: databases/*/postgres/*.yaml
+  template:
+    metadata:
+      # service-dbname-db-env (e.g., example-api-main-db-dev)
+      name: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-db-{{`{{ .env }}`}}'
+      labels:
+        app: '{{`{{ index .path.segments 1 }}`}}'
+        database: '{{`{{ trimSuffix ".yaml" .path.filename }}`}}'
+        env: '{{`{{ .env }}`}}'
+        type: postgres
+    spec:
+      project: data
+      sources:
+        - repoURL: https://cloudnative-pg.github.io/charts
+          chart: cluster
+          targetRevision: "0.3.1"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              # 1. Environment defaults (base)
+              - $infra/helm-values/data/postgres-{{`{{ .env }}`}}-defaults.yaml
+              # 2. Service config (overrides defaults)
+              - $deploy/{{`{{ .path.path }}`}}/{{`{{ .path.filename }}`}}
+              # 3. Service + env config (optional, highest priority)
+              - $deploy/{{`{{ .path.path }}`}}/{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}.yaml
+        - repoURL: {{ .Values.deploy.repoURL }}
+          targetRevision: {{ .Values.deploy.targetRevision }}
+          ref: deploy
+        - repoURL: {{ .Values.spec.source.repoURL }}
+          targetRevision: {{ .Values.spec.source.targetRevision }}
+          ref: infra
+      destination:
+        server: {{ .Values.spec.destination.server }}
+        namespace: '{{`{{ index .path.segments 1 }}`}}-{{`{{ .env }}`}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            app: '{{`{{ index .path.segments 1 }}`}}'
+            env: '{{`{{ .env }}`}}'
+            tier: application
+            team: backend
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

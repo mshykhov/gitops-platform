@@ -1,0 +1,124 @@
+# =============================================================================
+# APPLICATIONSET - REDIS × SERVICES × ENVIRONMENTS
+# =============================================================================
+# Operator: https://redis-operator.opstree.dev/
+# Chart: charts/redis-instance (local)
+#
+# Matrix Generator: databases/*/redis/*.yaml × environments (dev, prd)
+# Each microservice can have multiple Redis instances.
+#
+# Structure:
+#   databases/<service>/redis/<instance-name>.yaml
+#   databases/<service>/redis/<instance-name>-<env>.yaml  (optional, per-env overrides)
+#
+# Examples:
+#   databases/example-api/redis/cache.yaml          → base config (all envs)
+#   databases/example-api/redis/cache-dev.yaml      → dev overrides (optional)
+#   databases/example-api/redis/cache-prd.yaml      → prd overrides (optional)
+#
+# Value precedence (lowest to highest):
+#   1. Environment defaults (helm-values/data/redis-<env>-defaults.yaml)
+#   2. Service config (databases/<service>/redis/<instance>.yaml)
+#   3. Service + env config (databases/<service>/redis/<instance>-<env>.yaml)
+#
+# GENERATED RESOURCES (OT Redis Operator):
+# ----------------------------------------
+# DEV (standalone mode):
+#   Redis CRD: <service>-<instance>-<env> (e.g., example-api-cache-dev)
+#   Service:   <service>-<instance>-<env>:6379
+#
+# PRD (sentinel mode):
+#   RedisReplication CRD: <service>-<instance>-<env>
+#   RedisSentinel CRD:    <service>-<instance>-<env>-sentinel
+#   Services:
+#     <name>:6379           → Redis (master elected by sentinel)
+#     <name>-sentinel:26379 → Sentinel
+#
+# Connection: <name>.<namespace>.svc.cluster.local:6379
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: redis-clusters
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - env: dev
+                - env: prd
+          - git:
+              repoURL: {{ .Values.deploy.repoURL }}
+              revision: {{ .Values.deploy.targetRevision }}
+              files:
+                - path: databases/*/redis/*.yaml
+  template:
+    metadata:
+      # service-instance-redis-env (e.g., example-api-cache-redis-dev)
+      name: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-redis-{{`{{ .env }}`}}'
+      labels:
+        app: '{{`{{ index .path.segments 1 }}`}}'
+        instance: '{{`{{ trimSuffix ".yaml" .path.filename }}`}}'
+        env: '{{`{{ .env }}`}}'
+        type: redis
+    spec:
+      project: data
+      sources:
+        - repoURL: {{ .Values.spec.source.repoURL }}
+          targetRevision: {{ .Values.spec.source.targetRevision }}
+          path: charts/redis-instance
+          helm:
+            releaseName: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}'
+            ignoreMissingValueFiles: true
+            valueFiles:
+              # 1. Environment defaults (base)
+              - ../../helm-values/data/redis-{{`{{ .env }}`}}-defaults.yaml
+              # 2. Service config (overrides defaults)
+              - $deploy/{{`{{ .path.path }}`}}/{{`{{ .path.filename }}`}}
+              # 3. Service + env config (optional, highest priority)
+              - $deploy/{{`{{ .path.path }}`}}/{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}.yaml
+            values: |
+              name: {{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}
+        - repoURL: {{ .Values.deploy.repoURL }}
+          targetRevision: {{ .Values.deploy.targetRevision }}
+          ref: deploy
+      destination:
+        server: {{ .Values.spec.destination.server }}
+        namespace: '{{`{{ index .path.segments 1 }}`}}-{{`{{ .env }}`}}'
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          jsonPointers:
+            - /data/password
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jqPathExpressions:
+            - .spec.data[].remoteRef.conversionStrategy
+            - .spec.data[].remoteRef.decodingStrategy
+            - .spec.data[].remoteRef.metadataPolicy
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            app: '{{`{{ index .path.segments 1 }}`}}'
+            env: '{{`{{ .env }}`}}'
+            tier: application
+            team: backend
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

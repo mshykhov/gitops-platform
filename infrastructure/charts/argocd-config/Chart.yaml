@@ -1,0 +1,5 @@
+apiVersion: v2
+name: argocd-config
+description: ArgoCD configuration (anonymous access, ingress via protected-services)
+type: application
+version: 2.1.0

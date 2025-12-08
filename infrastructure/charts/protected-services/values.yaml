@@ -1,0 +1,91 @@
+# Protected Services - Ingress Configuration
+#
+# Service parameters:
+#   enabled: bool       - enable/disable ingress
+#   namespace: string   - target namespace
+#   hostname: string    - public domain (enables Cloudflare + External-DNS)
+#   path: string        - ingress path (default: /)
+#   oauth2: bool        - enable OAuth2-Proxy auth (default: true)
+#   websocket: bool     - enable WebSocket support (proxy timeouts 3600s)
+#   allowedGroups: []   - Auth0 groups for access control
+#   backend.name: str   - service name
+#   backend.port: int   - service port
+#   backend.protocol: str - backend protocol (optional, e.g. HTTPS)
+#
+# Routing:
+#   - With hostname: public via Cloudflare Tunnel
+#   - Without hostname: private via Tailscale (name.tailnet.ts.net)
+
+# cloudflare.tunnelId comes from global values
+
+oauth2Proxy:
+  authUrl: "http://oauth2-proxy.oauth2-proxy.svc.cluster.local/oauth2/auth"
+  authSignin: "https://$host/oauth2/start?rd=$escaped_request_uri"
+  authResponseHeaders: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Groups"
+
+services:
+  argocd:
+    enabled: true
+    namespace: argocd
+    allowedGroups:
+      - infra-admins
+      - argocd-admins
+    backend:
+      name: argocd-server
+      port: 80
+
+  longhorn:
+    enabled: true
+    namespace: longhorn-system
+    allowedGroups:
+      - infra-admins
+      - longhorn-admins
+    backend:
+      name: longhorn-frontend
+      port: 80
+
+  grafana:
+    enabled: true
+    namespace: monitoring
+    allowedGroups:
+      - infra-admins
+      - monitoring-admins
+    backend:
+      name: kube-prometheus-stack-grafana
+      port: 80
+
+  example-api-dev:
+    enabled: true
+    oauth2: false
+    namespace: example-api-dev
+    backend:
+      name: example-api-dev
+      port: 8080
+
+  example-ui-dev:
+    enabled: true
+    oauth2: false
+    namespace: example-ui-dev
+    backend:
+      name: example-ui-dev
+      port: 8080
+
+  example-api-prd:
+    enabled: true
+    oauth2: false
+    # Public hostname: api.{global.domain}
+    subdomain: api
+    namespace: example-api-prd
+    backend:
+      name: example-api-prd
+      port: 8080
+
+  example-ui-prd:
+    enabled: true
+    oauth2: false
+    # Public hostname: {global.domain} (root domain)
+    subdomain: ""
+    namespace: example-ui-prd
+    backend:
+      name: example-ui-prd
+      port: 8080

@@ -1,0 +1,180 @@
+# =============================================================================
+# KUBE-PROMETHEUS-STACK WRAPPER VALUES
+# =============================================================================
+# Telegram config comes from global values and is templated in alertmanager-config.yaml
+
+kube-prometheus-stack:
+  # ===========================================================================
+  # GRAFANA
+  # ===========================================================================
+  # NOTE: Anonymous admin access is intentional - authentication is handled
+  # by oauth2-proxy at ingress level (protected-services chart).
+  # Internal cluster access is trusted (k3s-home single-tenant cluster).
+  # For multi-tenant or production: use ExternalSecret for adminPassword
+  # and configure proper auth via Auth0/OIDC.
+  # ===========================================================================
+  grafana:
+    enabled: true
+    adminPassword: "admin"
+    grafana.ini:
+      auth.anonymous:
+        enabled: true
+        org_name: Main Org.
+        org_role: Admin
+      auth:
+        disable_login_form: true
+      server:
+        root_url: "%(protocol)s://%(domain)s/"
+    ingress:
+      enabled: false
+    persistence:
+      enabled: true
+      storageClassName: longhorn
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    defaultDashboardsEnabled: true
+    defaultDashboardsTimezone: utc
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy
+        isDefault: false
+
+  # ===========================================================================
+  # PROMETHEUS
+  # ===========================================================================
+  # Memory sizing: ~8KB per active time series
+  # https://www.robustperception.io/how-much-ram-does-prometheus-2-x-need-for-cardinality-and-ingestion/
+  # k3s-home with ~50k series: 8KB * 50k = ~400MB, 1Gi limit provides headroom
+  # ===========================================================================
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      retention: 7d
+      retentionSize: "5GB"
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+    ingress:
+      enabled: false
+
+  # ===========================================================================
+  # ALERTMANAGER
+  # ===========================================================================
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      secrets:
+        - telegram-secrets
+      useExistingSecret: true
+      configSecret: alertmanager-config
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 2Gi
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    ingress:
+      enabled: false
+
+  # ===========================================================================
+  # NODE EXPORTER
+  # ===========================================================================
+  nodeExporter:
+    enabled: true
+
+  prometheus-node-exporter:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 48Mi
+
+  # ===========================================================================
+  # KUBE-STATE-METRICS
+  # ===========================================================================
+  kubeStateMetrics:
+    enabled: true
+
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  # ===========================================================================
+  # PROMETHEUS OPERATOR
+  # ===========================================================================
+  prometheusOperator:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # ===========================================================================
+  # K3S SPECIFIC
+  # ===========================================================================
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeProxy:
+    enabled: false
+  # ===========================================================================
+  # CUSTOM RULES - Override "for" duration
+  # Critical: 5m (fast notification)
+  # Warning: 15m (default, avoid spam)
+  # ===========================================================================
+  customRules:
+    # Critical alerts - 5m
+    KubePodCrashLooping:
+      for: 5m
+    KubePodNotReady:
+      for: 5m
+    # Warning alerts - keep 15m default (no override needed)
+
+  defaultRules:
+    disabled:
+      InfoInhibitor: true
+    rules:
+      kubeControllerManager: false
+      kubeScheduler: false
+      kubeProxy: false

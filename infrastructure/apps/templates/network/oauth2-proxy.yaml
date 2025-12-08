@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "15"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: network
+  sources:
+    # Helm chart
+    - repoURL: https://oauth2-proxy.github.io/manifests
+      chart: oauth2-proxy
+      targetRevision: "9.0.0"
+      helm:
+        valueFiles:
+          - $values/helm-values/network/oauth2-proxy.yaml
+        # Dynamic values (uses global from apps/values.yaml)
+        valuesObject:
+          config:
+            configFile: |
+              provider = "oidc"
+              provider_display_name = "Auth0"
+              oidc_issuer_url = "https://{{ .Values.global.auth0.domain }}/"
+              email_domains = ["*"]
+              upstreams = ["static://202"]
+              reverse_proxy = true
+              set_xauthrequest = true
+              set_authorization_header = true
+              pass_access_token = true
+              pass_user_headers = true
+              skip_provider_button = true
+              cookie_secure = true
+              cookie_samesite = "lax"
+              cookie_httponly = true
+              cookie_csrf_per_request = true
+              cookie_csrf_expire = "5m"
+              whitelist_domains = [".{{ .Values.global.tailnet }}.ts.net", ".{{ .Values.global.domain }}", ".auth0.com"]
+              cookie_domains = [".{{ .Values.global.tailnet }}.ts.net", ".{{ .Values.global.domain }}"]
+              insecure_oidc_allow_unverified_email = true
+              oidc_groups_claim = "https://ns/groups"
+    # Values from git repo
+    - repoURL: {{ .Values.spec.source.repoURL }}
+      targetRevision: {{ .Values.spec.source.targetRevision }}
+      ref: values
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: oauth2-proxy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        tier: network
+        team: platform
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
