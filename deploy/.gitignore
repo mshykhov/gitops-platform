@@ -1,0 +1,12 @@
+# Helm
+charts/
+Chart.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

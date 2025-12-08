@@ -1,0 +1,21 @@
+# =============================================================================
+# REDIS - example-service cache
+# =============================================================================
+# Configuration for OT Redis Operator
+# In-memory mode (no persistence) - recommended for pure cache use case
+# =============================================================================
+name: example-service-cache
+
+mode: standalone
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# No persistence for cache - data rebuilds from source on restart
+storage:
+  enabled: false

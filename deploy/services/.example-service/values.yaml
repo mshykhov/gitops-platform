@@ -1,0 +1,138 @@
+# =============================================================================
+# BASE VALUES - example-service
+# =============================================================================
+# Common settings for all environments.
+# Environment-specific overrides in values-dev.yaml and values-prd.yaml
+# =============================================================================
+replicaCount: 1
+
+# =============================================================================
+# IMAGE
+# =============================================================================
+image:
+  repository: your-registry/your-service  # Docker image repository
+  tag: "0.0.1"                             # Image tag (updated by CI/CD)
+  pullPolicy: IfNotPresent                 # Always, IfNotPresent, Never
+
+# Registry credentials (if private registry)
+# Created by External Secrets or manually
+imagePullSecrets: []
+#  - name: registry-credentials
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+containerPort: 8080
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# =============================================================================
+# PROBES
+# =============================================================================
+# Liveness: restarts container if check fails
+livenessProbe:
+  enabled: true
+  path: /health                  # Spring Boot: /actuator/health/liveness
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+# Readiness: removes from service if check fails
+readinessProbe:
+  enabled: true
+  path: /health                  # Spring Boot: /actuator/health/readiness
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# Startup probe for slow-starting applications (e.g., Java/Spring Boot)
+# Docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+startupProbe:
+  enabled: false
+  path: /health
+  failureThreshold: 30
+  periodSeconds: 10
+
+# Graceful shutdown period (increase for Java apps: 60s)
+terminationGracePeriodSeconds: 30
+
+# =============================================================================
+# RESOURCES
+# =============================================================================
+# Always set requests and limits!
+# Requests: guaranteed resources, used for scheduling
+# Limits: maximum resources, container killed if exceeded (OOMKilled)
+resources:
+  requests:
+    cpu: 100m        # 0.1 CPU core
+    memory: 128Mi
+  limits:
+    cpu: 500m        # 0.5 CPU core
+    memory: 256Mi    # Java apps: 512Mi-1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+# Base env vars - shared across all environments
+env: []
+#  - name: APP_NAME
+#    value: "my-service"
+
+# Environment-specific additions (use in values-dev.yaml, values-prd.yaml)
+# IMPORTANT: Use extraEnv to ADD variables without overriding env[]
+# Both env[] and extraEnv[] are merged in the deployment template
+extraEnv: []
+
+# =============================================================================
+# MONITORING
+# =============================================================================
+# ServiceMonitor for Prometheus Operator
+serviceMonitor:
+  enabled: false
+  path: /metrics
+  interval: 30s
+  scrapeTimeout: 10s
+
+# =============================================================================
+# HIGH AVAILABILITY
+# =============================================================================
+# PodDisruptionBudget - auto-enabled when replicaCount > 1
+# Override with pdb.enabled: false to disable
+# pdb:
+#   enabled: false
+#   minAvailable: 1
+#   maxUnavailable: 1
