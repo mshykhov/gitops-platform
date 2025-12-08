@@ -111,7 +111,7 @@ GitHub Actions workflow (`.github/workflows/release.yaml`) builds and pushes Doc
 
 **Trigger**: Push tag `v*.*.*` (e.g., `v1.0.0`, `v1.0.0-beta.1`)
 
-**Required secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+**Required secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` ([setup guide](../docs/github-secrets.md))
 
 ```bash
 # Create release
