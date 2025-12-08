@@ -105,6 +105,24 @@ If your backend requires token validation:
 
 > **Docs**: [Auth0 API Authorization](https://auth0.com/docs/get-started/apis)
 
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/release.yaml`) builds and pushes Docker image on semver tags.
+
+**Trigger**: Push tag `v*.*.*` (e.g., `v1.0.0`, `v1.0.0-beta.1`)
+
+**Required secrets**:
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+
+```bash
+# Create release
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Configuration
 
 | Environment | Config Source | Mechanism |
