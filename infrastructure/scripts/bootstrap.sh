@@ -2,16 +2,6 @@
 # =============================================================================
 # K3s + Tools Bootstrap Script
 # =============================================================================
-# Installs: k3s (without traefik/servicelb), kubectl, helm, k9s
-# Target: Ubuntu 22.04+ / Debian-based systems
-# Usage: sudo ./bootstrap.sh
-#
-# Docs:
-#   - k3s: https://docs.k3s.io/installation
-#   - Helm: https://helm.sh/docs/intro/install/
-#   - k9s: https://k9scli.io/topics/install/
-# =============================================================================
-
 set -euo pipefail
 
 RED='\033[0;31m'
@@ -47,8 +37,8 @@ check_system() {
     local cpus=$(nproc)
     log_info "CPU: ${cpus} cores, RAM: ${mem_gb}GB"
 
-    [[ $mem_gb -lt 4 ]] && log_warn "Recommended: 4GB+ RAM"
-    [[ $cpus -lt 2 ]] && log_warn "Recommended: 2+ CPUs"
+    if [[ $mem_gb -lt 4 ]]; then log_warn "Recommended: 4GB+ RAM"; fi
+    if [[ $cpus -lt 2 ]]; then log_warn "Recommended: 2+ CPUs"; fi
 }
 
 install_deps() {
@@ -57,8 +47,6 @@ install_deps() {
     apt-get update -qq
     apt-get install -y -qq curl wget jq open-iscsi nfs-common
 
-    # Enable iscsid for Longhorn
-    # https://longhorn.io/docs/latest/deploy/install/#installation-requirements
     systemctl enable iscsid --now
 
     log_success "Dependencies installed"
@@ -70,28 +58,21 @@ install_k3s() {
     if command -v k3s &> /dev/null; then
         log_warn "k3s already installed: $(k3s --version | head -1)"
         read -r -p "Reinstall? (y/N): " choice
-        [[ ! "$choice" =~ ^[Yy]$ ]] && return 0
+        if [[ ! "$choice" =~ ^[Yy]$ ]]; then return 0; fi
         /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
     fi
 
     log_info "Installing k3s (--disable traefik,servicelb, --secrets-encryption)..."
 
-    # https://docs.k3s.io/cli/server
-    # https://docs.k3s.io/security/secrets-encryption
-    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
-        --disable=traefik \
-        --disable=servicelb \
-        --secrets-encryption \
-        --write-kubeconfig-mode=644" sh -
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable=traefik --disable=servicelb --secrets-encryption --write-kubeconfig-mode=600" sh -
 
-    # Wait for k3s
     local i=0
     while [[ $i -lt 30 ]]; do
-        k3s kubectl get nodes &>/dev/null && break
+        if k3s kubectl get nodes &>/dev/null; then break; fi
         sleep 2 && ((i++))
     done
 
-    [[ $i -eq 30 ]] && { log_error "k3s failed to start"; exit 1; }
+    if [[ $i -eq 30 ]]; then log_error "k3s failed to start"; exit 1; fi
     log_success "k3s installed"
 }
 
@@ -107,12 +88,11 @@ setup_kubeconfig() {
     chown -R "$user:$user" "$kube_dir"
     chmod 600 "$kube_dir/config"
 
-    # Symlink kubectl
     ln -sf /usr/local/bin/k3s /usr/local/bin/kubectl 2>/dev/null || true
 
-    # Add to .bashrc
     local bashrc="$home/.bashrc"
-    grep -q "KUBECONFIG=" "$bashrc" 2>/dev/null || cat >> "$bashrc" << 'EOF'
+    if ! grep -q "KUBECONFIG=" "$bashrc" 2>/dev/null; then
+        cat >> "$bashrc" << 'EOF'
 
 # Kubernetes
 export KUBECONFIG=~/.kube/config
@@ -120,6 +100,7 @@ source <(kubectl completion bash)
 alias k=kubectl
 complete -o default -F __start_kubectl k
 EOF
+    fi
 
     log_success "kubeconfig ready: $kube_dir/config"
 }
@@ -136,8 +117,9 @@ install_helm() {
 
     local user="${SUDO_USER:-$USER}"
     local bashrc="$(getent passwd "$user" | cut -d: -f6)/.bashrc"
-    grep -q "helm completion" "$bashrc" 2>/dev/null || \
+    if ! grep -q "helm completion" "$bashrc" 2>/dev/null; then
         echo 'source <(helm completion bash)' >> "$bashrc"
+    fi
 
     log_success "Helm installed"
 }
