@@ -33,3 +33,6 @@ id_rsa*
 *.tmp
 *.log
 *.swp
+
+# Claude Code
+.claude/
