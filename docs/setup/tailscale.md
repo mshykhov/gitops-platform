@@ -18,46 +18,46 @@ Tailscale Operator provides private access to cluster services and kubectl via V
 
 ```json
 {
-  // Who can assign tags
   "tagOwners": {
     "tag:k8s-operator": ["autogroup:admin"],
-    "tag:k8s": ["tag:k8s-operator"],
-    "tag:server": ["autogroup:admin"]
+    "tag:k8s":          ["tag:k8s-operator"],
+    "tag:server":       ["autogroup:admin"],
+    // ... other tags
   },
-
-  // Network access - NO wildcard, explicit rules only
   "acls": [
-    // Admins - full access to everything
     {"action": "accept", "src": ["autogroup:admin"], "dst": ["*:*"]},
-
-    // Server SSH - admins only
     {"action": "accept", "src": ["autogroup:admin"], "dst": ["tag:server:22,2222"]},
-
-    // K8s services - HTTPS for members
-    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:k8s:443"]}
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:k8s:443"]},
+    // ... other rules
   ],
-
   "grants": [
-    // Admin kubectl access via API Server Proxy
     {
       "src": ["autogroup:admin"],
       "dst": ["tag:k8s-operator"],
-      "ip": ["*:*"],
+      "ip":  ["*:*"],
       "app": {
         "tailscale.com/cap/kubernetes": [{
-          "impersonate": {"groups": ["system:masters"]}
-        }]
-      }
-    }
+          "impersonate": {"groups": ["system:masters"]},
+        }],
+      },
+    },
+    // ... other grants
   ],
-
-  // Auto-approve Tailscale Services
   "autoApprovers": {
     "services": {
-      "tag:k8s": ["tag:k8s"]
-    }
-  }
-
+      "tag:k8s": ["tag:k8s"],
+    },
+    // ... other auto approvers
+  },
+  "ssh": [
+    {
+      "action": "check",
+      "src":    ["autogroup:admin"],
+      "dst":    ["tag:server"],
+      "users":  ["autogroup:nonroot", "root"],
+    },
+    // ... other ssh rules
+  ],
   // ... other sections
 }
 ```
