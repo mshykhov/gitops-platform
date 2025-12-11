@@ -1,5 +1,5 @@
 # =============================================================================
-# IMAGE UPDATER CR - example-api
+# IMAGE UPDATER CR - EXAMPLE
 # =============================================================================
 # Docs: https://argocd-image-updater.readthedocs.io/en/stable/configuration/migration/
 #
@@ -8,23 +8,28 @@
 # Workflow:
 #   v0.1.0-rc.1 -> DEV auto-deploy (constraint ~0-0 includes pre-release)
 #   v0.1.0      -> PRD auto-deploy (constraint ~0 stable only)
+#
+# Usage:
+#   1. Copy this file to <service-name>.yaml
+#   2. Replace placeholders with your values
+#   3. Apply: kubectl apply -f <service-name>.yaml
 # =============================================================================
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: example-api
+  name: <SERVICE_NAME>
 spec:
   namespace: argocd
   writeBackConfig:
-    method: "git:secret:argocd/repo-example-deploy"
+    method: "git:secret:argocd/repo-<DEPLOY_REPO_NAME>"
     gitConfig:
       branch: master
   applicationRefs:
     # DEV: includes pre-release versions (0.1.0-rc.1, 0.1.0-beta.2)
-    - namePattern: "example-api-dev"
+    - namePattern: "<SERVICE_NAME>-dev"
       images:
         - alias: "app"
-          imageName: "shykhovmyron/example-api:~0-0"
+          imageName: "<DOCKERHUB_USERNAME>/<SERVICE_NAME>:~0-0"
           commonUpdateSettings:
             updateStrategy: "semver"
           manifestTargets:
@@ -32,10 +37,10 @@ spec:
               name: "image.repository"
               tag: "image.tag"
     # PRD: stable versions only (0.1.0, 0.2.0)
-    - namePattern: "example-api-prd"
+    - namePattern: "<SERVICE_NAME>-prd"
       images:
         - alias: "app"
-          imageName: "shykhovmyron/example-api:~0"
+          imageName: "<DOCKERHUB_USERNAME>/<SERVICE_NAME>:~0"
           commonUpdateSettings:
             updateStrategy: "semver"
           manifestTargets:

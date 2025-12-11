@@ -1,16 +1,16 @@
 # =============================================================================
-# CLUSTER SECRET STORE - DOPPLER (dev environment)
+# CLUSTER SECRET STORE - DOPPLER (prd environment)
 # =============================================================================
 # Docs: https://external-secrets.io/latest/provider/doppler/
 #
 # Prerequisites:
 #   1. Create Doppler account: https://dashboard.doppler.com
-#   2. Create project and config (e.g., project: "example", config: "dev")
+#   2. Create project and config (e.g., project: "example", config: "prd")
 #   3. Generate Service Token in Doppler (Access tab → Service Tokens)
 #   4. Create K8s secret with token:
-#      kubectl create secret generic doppler-token-dev \
+#      kubectl create secret generic doppler-token-prd \
 #        --namespace external-secrets \
-#        --from-literal=dopplerToken="dp.st.dev.XXXX"
+#        --from-literal=dopplerToken="dp.st.prd.XXXX"
 # =============================================================================
 apiVersion: external-secrets.io/v1
 kind: ClusterSecretStore

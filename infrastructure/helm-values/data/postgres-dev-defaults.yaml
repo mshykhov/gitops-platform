@@ -19,8 +19,8 @@ cluster:
     storageClass: longhorn
 
   # Resources - per CloudNativePG recommendations:
-  # https://cloudnative-pg.io/documentation/1.20/resource_management/
-  # Rule: container memory = 4x shared_buffers (default 128MB = 512Mi min)
+  # https://cloudnative-pg.io/documentation/current/resource_management/
+  # Rule: container memory >= 4x shared_buffers (default 128MB = 512Mi min)
   # DEV: minimal resources for development/testing
   resources:
     requests:
@@ -46,12 +46,12 @@ backups:
   retentionPolicy: "7d"
 
   # Source: apps/values.yaml -> global.s3.endpoint
-  endpointURL: https://4aa95df965d3bc2bfaabe9012a35857c.r2.cloudflarestorage.com
-  destinationPath: s3://postgresql-backups/
+  endpointURL: <S3_ENDPOINT>
+  destinationPath: s3://<S3_BUCKET_CNPG>/
 
   s3:
     region: auto
-    bucket: postgresql-backups
+    bucket: <S3_BUCKET_CNPG>
     path: /
     accessKey: ""
     secretKey: ""
@@ -83,11 +83,11 @@ recovery:
   method: object_store
   provider: s3
   # Source: apps/values.yaml -> global.s3.endpoint
-  endpointURL: https://4aa95df965d3bc2bfaabe9012a35857c.r2.cloudflarestorage.com
-  destinationPath: s3://postgresql-backups/
+  endpointURL: <S3_ENDPOINT>
+  destinationPath: s3://<S3_BUCKET_CNPG>/
   s3:
     region: auto
-    bucket: postgresql-backups
+    bucket: <S3_BUCKET_CNPG>
   secret:
     create: false
     name: cnpg-backup-s3

@@ -1,6 +1,8 @@
 # =============================================================================
 # GLOBAL VALUES - CHANGE THESE FOR YOUR SETUP
 # =============================================================================
+# Docs: https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/
+# =============================================================================
 
 # -----------------------------------------------------------------------------
 # ArgoCD Spec
@@ -9,60 +11,66 @@ spec:
   destination:
     server: https://kubernetes.default.svc
   source:
-    repoURL: git@github.com:mshykhov/example-infrastructure.git
+    repoURL: <INFRASTRUCTURE_REPO_URL>        # git@github.com:username/infrastructure.git
     targetRevision: master
 
 # -----------------------------------------------------------------------------
 # Deploy Repository - contains service Helm charts
 # -----------------------------------------------------------------------------
 deploy:
-  repoURL: git@github.com:mshykhov/example-deploy.git
+  repoURL: <DEPLOY_REPO_URL>                  # git@github.com:username/deploy.git
   targetRevision: master
 
 # -----------------------------------------------------------------------------
 # Global Configuration (shared across all apps)
 # -----------------------------------------------------------------------------
 global:
+  # Service namespace prefixes (used in ArgoCD project destinations as {prefix}-*)
+  # Add your service prefixes here, e.g., myapp, myapp-api, myapp-ui
+  servicePrefixes:
+    - <SERVICE_PREFIX>                        # e.g., example, myapp
+
   # Cluster identifier (used in observability labels)
-  cluster: k3s-home
+  cluster: <CLUSTER_NAME>                     # e.g., k3s-home, eks-prod
 
   # Public domain (externally accessible via Cloudflare Tunnel)
-  domain: untrustedonline.org
+  domain: <DOMAIN>                            # e.g., example.com
 
-  # Tailscale
-  tailnet: tail876052
+  # Tailscale (https://tailscale.com/kb/1236/kubernetes-operator)
+  tailnet: <TAILNET_NAME>                     # e.g., tail123456
   tailscale:
-    clientId: k3r7wuCSzd11CNTRL
+    clientId: <TAILSCALE_CLIENT_ID>           # OAuth client ID
 
-  # Auth0 OIDC
+  # Auth0 OIDC (https://auth0.com/docs/get-started)
   auth0:
-    domain: dev-tgrsoxiakeqdr1gg.us.auth0.com
-    clientId: wsZ3vIm5FlxztPisdo3Jq5BaeJvASZrz
+    domain: <AUTH0_DOMAIN>                    # e.g., dev-xxx.us.auth0.com
+    clientId: <AUTH0_CLIENT_ID>               # Application client ID
+    groupsClaim: <AUTH0_GROUPS_CLAIM>         # Custom claim for groups (e.g., https://myapp/groups)
 
   # Docker Hub
   dockerhub:
-    username: shykhovmyron
+    username: <DOCKERHUB_USERNAME>            # Your Docker Hub username
 
-  # Cloudflare Tunnel
+  # Cloudflare Tunnel (https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
   cloudflare:
-    tunnelId: f6746974-5104-49ef-beed-c66a048f5062
+    tunnelId: <CLOUDFLARE_TUNNEL_ID>          # UUID from Cloudflare dashboard
 
   # Telegram Notifications
+  # Create bot: https://core.telegram.org/bots#how-do-i-create-a-bot
+  # Get chat ID: https://api.telegram.org/bot<TOKEN>/getUpdates
   telegram:
-    chatId: "-1003078665133"
+    chatId: "<TELEGRAM_CHAT_ID>"              # e.g., "-1001234567890"
     topics:
-      critical: "2"
-      warning: "5"
-      info: "7"
-      deploys: "10"
+      critical: "<TELEGRAM_TOPIC_CRITICAL>"   # Topic ID for critical alerts
+      warning: "<TELEGRAM_TOPIC_WARNING>"     # Topic ID for warnings
+      info: "<TELEGRAM_TOPIC_INFO>"           # Topic ID for info
+      deploys: "<TELEGRAM_TOPIC_DEPLOYS>"     # Topic ID for deploy notifications
 
-  # S3-compatible storage (Cloudflare R2)
-  # Used by: Velero, CNPG
+  # S3-compatible storage (Cloudflare R2, AWS S3, MinIO)
+  # Used by: Velero (backups), CloudNativePG (WAL archiving)
   s3:
-    endpoint: https://4aa95df965d3bc2bfaabe9012a35857c.r2.cloudflarestorage.com
-    region: auto
+    endpoint: <S3_ENDPOINT>                   # e.g., https://xxx.r2.cloudflarestorage.com
+    region: <S3_REGION>                       # e.g., auto, us-east-1
     buckets:
-      velero: velero-backups
-      cnpg: cnpg-backups
-
-
+      velero: <S3_BUCKET_VELERO>              # Bucket name for Velero backups
+      cnpg: <S3_BUCKET_CNPG>                  # Bucket name for CNPG WAL archives
