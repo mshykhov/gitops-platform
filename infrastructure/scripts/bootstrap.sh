@@ -74,12 +74,14 @@ install_k3s() {
         /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
     fi
 
-    log_info "Installing k3s (--disable traefik,servicelb)..."
+    log_info "Installing k3s (--disable traefik,servicelb, --secrets-encryption)..."
 
     # https://docs.k3s.io/cli/server
+    # https://docs.k3s.io/security/secrets-encryption
     curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
         --disable=traefik \
         --disable=servicelb \
+        --secrets-encryption \
         --write-kubeconfig-mode=644" sh -
 
     # Wait for k3s
