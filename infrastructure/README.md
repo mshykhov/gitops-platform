@@ -36,7 +36,7 @@ Join server to tailnet → [Setup Guide](../docs/setup/tailscale-server.md)
 SSH to your server and run the bootstrap script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mshykhov/gitops-platform/main/infrastructure/scripts/bootstrap.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/mshykhov/gitops-platform/master/infrastructure/scripts/bootstrap.sh | sudo bash
 ```
 
 This installs k3s, configures kubeconfig, and installs dependencies (open-iscsi for Longhorn).
