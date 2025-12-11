@@ -15,7 +15,26 @@ Auth0 provides authentication for internal services via oauth2-proxy.
 
 1. Go to [auth0.com/signup](https://auth0.com/signup)
 2. Create tenant (e.g., `myproject-dev`)
-3. Note your domain → save as `<AUTH0_DOMAIN>` (e.g., `myproject-dev.us.auth0.com`)
+3. Note your domain (e.g., `myproject-dev.us.auth0.com`)
+
+### Custom Domain (optional)
+
+Use your own domain instead of `*.auth0.com`:
+
+1. **Auth0**: [Settings](https://manage.auth0.com/dashboard) → **Custom Domains** → Add domain (e.g., `login.example.com`)
+2. Auth0 shows CNAME target (e.g., `xxx.edge.tenants.us.auth0.com`)
+3. **Cloudflare DNS** → Add record:
+   - **Type**: `CNAME`
+   - **Name**: `login`
+   - **Target**: value from Auth0
+   - **Proxy status**: **DNS only** (grey cloud, not orange!)
+4. Wait 1-5 min → click **Verify** in Auth0
+
+> **Note**: If you deleted and recreated the domain, wait up to 4 hours before verification works.
+
+Save your domain as `<AUTH0_DOMAIN>`:
+- With custom domain: `login.example.com`
+- Without: `myproject-dev.us.auth0.com`
 
 ---
 
@@ -71,8 +90,8 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ### Add Action to Login Flow
 
-1. **Actions** → **Flows** → **Login**
-2. Drag `Add Groups to Token` into the flow
+1. **Actions** → **Triggers** → **post-login**
+2. Drag `Add Groups to Token` from right panel into the flow (between Start and Complete)
 3. Click **Apply**
 
 <details>

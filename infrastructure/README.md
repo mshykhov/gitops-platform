@@ -108,8 +108,8 @@ ACL policy, OAuth client → [Setup Guide](../docs/setup/tailscale.md)
 Access token for pulling images (avoids rate limits).
 
 1. [Create account](https://hub.docker.com/signup) or login
-2. Go to [Account Settings → Security](https://hub.docker.com/settings/security)
-3. Click **New Access Token**
+2. Go to [Account Settings → Personal access tokens](https://hub.docker.com/settings/security)
+3. Click **Generate new token**
 4. Description: `k8s-pull`, Access: **Read-only**
 5. Click **Generate** and copy token
 
@@ -163,10 +163,10 @@ After completing all steps, verify `shared` config contains:
 ### 3.1 Create Infrastructure Repository
 
 1. Fork or copy this `infrastructure` directory to a new GitHub repository
-2. Name it `infrastructure` (e.g., `github.com/<YOUR_ORG>/infrastructure`)
+2. Name it (e.g., `mshykhov/smhomelab-infrastructure`)
 3. This will be your GitOps source of truth
 
-Save your GitHub organization/username as `<YOUR_ORG>`
+Save as `<GITHUB_USER>/<INFRASTRUCTURE_REPO>` (e.g., `mshykhov/smhomelab-infrastructure`)
 
 ### 3.2 Install ArgoCD
 
@@ -179,16 +179,16 @@ kubectl wait --for=condition=available deployment/argocd-server -n argocd --time
 ### 3.3 Generate SSH Key
 
 ```bash
-ssh-keygen -t ed25519 -C "argocd" -f ~/.ssh/argocd -N ""
-cat ~/.ssh/argocd.pub
+ssh-keygen -t ed25519 -C "argocd-infrastructure" -f ~/.ssh/argocd-infrastructure -N ""
+cat ~/.ssh/argocd-infrastructure.pub
 ```
 
 ### 3.4 Add Deploy Key to GitHub
 
 1. Go to your infrastructure repo → **Settings** → **Deploy keys**
 2. Click **Add deploy key**
-3. Title: `argocd`
-4. Key: paste output from `cat ~/.ssh/argocd.pub`
+3. Title: `argocd-infrastructure`
+4. Key: paste output from `cat ~/.ssh/argocd-infrastructure.pub`
 5. Leave "Allow write access" unchecked (read-only is sufficient)
 6. Click **Add key**
 
@@ -197,12 +197,51 @@ cat ~/.ssh/argocd.pub
 ```bash
 kubectl create secret generic repo-infrastructure \
   --from-literal=type=git \
-  --from-literal=url=git@github.com:<YOUR_ORG>/infrastructure.git \
-  --from-file=sshPrivateKey=$HOME/.ssh/argocd \
+  --from-literal=url=git@github.com:<GITHUB_USER>/<INFRASTRUCTURE_REPO>.git \
+  --from-file=sshPrivateKey=$HOME/.ssh/argocd-infrastructure \
   -n argocd
 
 kubectl label secret repo-infrastructure argocd.argoproj.io/secret-type=repository -n argocd
 ```
+
+### 3.6 Create Deploy Repository (for applications)
+
+The deploy repository contains Helm charts for your applications (services, databases).
+
+1. Copy the `deploy` directory from this project to a new GitHub repository
+2. Name it (e.g., `mshykhov/smhomelab-deploy`)
+
+Save as `<GITHUB_USER>/<DEPLOY_REPO>` (e.g., `mshykhov/smhomelab-deploy`)
+
+### 3.7 Generate SSH Key for Deploy Repo
+
+```bash
+ssh-keygen -t ed25519 -C "argocd-deploy" -f ~/.ssh/argocd-deploy -N ""
+cat ~/.ssh/argocd-deploy.pub
+```
+
+### 3.8 Add Deploy Key to GitHub
+
+1. Go to your deploy repo → **Settings** → **Deploy keys**
+2. Click **Add deploy key**
+3. Title: `argocd-deploy`
+4. Key: paste output from `cat ~/.ssh/argocd-deploy.pub`
+5. **Check "Allow write access"** (required for ArgoCD Image Updater)
+6. Click **Add key**
+
+### 3.9 Create Deploy Repository Secret
+
+```bash
+kubectl create secret generic repo-deploy \
+  --from-literal=type=git \
+  --from-literal=url=git@github.com:<GITHUB_USER>/<DEPLOY_REPO>.git \
+  --from-file=sshPrivateKey=$HOME/.ssh/argocd-deploy \
+  -n argocd
+
+kubectl label secret repo-deploy argocd.argoproj.io/secret-type=repository -n argocd
+```
+
+> **Note**: The deploy repo is optional if you only need infrastructure. Skip steps 3.6-3.9 if not deploying custom applications.
 
 ---
 
@@ -214,14 +253,14 @@ Replace placeholders in configuration files with values collected in Step 2.
 
 | Placeholder | Description |
 |-------------|-------------|
-| `<INFRASTRUCTURE_REPO_URL>` | `git@github.com:<YOUR_ORG>/infrastructure.git` |
+| `<INFRASTRUCTURE_REPO_URL>` | `git@github.com:<GITHUB_USER>/<INFRASTRUCTURE_REPO>.git` |
 
 ### `apps/values.yaml`
 
 | Placeholder | Source (Step 2) |
 |-------------|-----------------|
 | `<INFRASTRUCTURE_REPO_URL>` | Step 3.1 |
-| `<DEPLOY_REPO_URL>` | `git@github.com:<YOUR_ORG>/deploy.git` |
+| `<DEPLOY_REPO_URL>` | `git@github.com:<GITHUB_USER>/<DEPLOY_REPO>.git` |
 | `<SERVICE_PREFIX>` | Your app prefix (e.g., `myapp`) |
 | `<CLUSTER_NAME>` | Cluster identifier (e.g., `k3s-home`) |
 | `<DOMAIN>` | 2.2 Cloudflare |
@@ -232,11 +271,9 @@ Replace placeholders in configuration files with values collected in Step 2.
 | `<AUTH0_GROUPS_CLAIM>` | 2.4 Auth0 |
 | `<DOCKERHUB_USERNAME>` | 2.5 Docker Hub |
 | `<CF_TUNNEL_ID>` | 2.2 Cloudflare |
+| `<CF_ACCOUNT_ID>` | 2.2 R2 Storage |
 | `<TELEGRAM_CHAT_ID>` | 2.6 Telegram |
 | `<TELEGRAM_TOPIC_*>` | 2.6 Telegram |
-| `<S3_ENDPOINT>` | 2.2 R2 Storage: `https://<CF_ACCOUNT_ID>.r2.cloudflarestorage.com` |
-| `<S3_REGION>` | `auto` (for R2) |
-| `<S3_BUCKET_CNPG>` | 2.2 R2 Storage: bucket name (e.g., `cnpg-backups`) |
 
 ### Deploy Repository (optional)
 
@@ -254,9 +291,9 @@ Clone repo to server and apply:
 
 ```bash
 eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/argocd
-git clone git@github.com:<YOUR_ORG>/infrastructure.git
-cd infrastructure
+ssh-add ~/.ssh/argocd-infrastructure
+git clone git@github.com:<GITHUB_USER>/<INFRASTRUCTURE_REPO>.git
+cd <INFRASTRUCTURE_REPO>
 kubectl apply -f bootstrap/root.yaml
 ```
 

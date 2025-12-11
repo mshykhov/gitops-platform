@@ -54,26 +54,28 @@ You need 3 tokens:
 
 ## 5. Create K8s Secrets
 
-Create secrets with Doppler Service Tokens:
+Create secrets with Doppler Service Tokens (space prefix prevents bash history):
 
 ```bash
 kubectl create namespace external-secrets
 
-kubectl create secret generic doppler-token-shared \
+ kubectl create secret generic doppler-token-shared \
   --namespace external-secrets \
   --from-literal=dopplerToken="dp.st.shared.XXXX"
 
-kubectl create secret generic doppler-token-dev \
+ kubectl create secret generic doppler-token-dev \
   --namespace external-secrets \
   --from-literal=dopplerToken="dp.st.dev.XXXX"
 
-kubectl create secret generic doppler-token-prd \
+ kubectl create secret generic doppler-token-prd \
   --namespace external-secrets \
   --from-literal=dopplerToken="dp.st.prd.XXXX"
-```
 
-> [!TIP]
-> Use `HISTIGNORE='*kubectl*' kubectl create secret...` to prevent storing tokens in bash history.
+# namespace/external-secrets created
+# secret/doppler-token-shared created
+# secret/doppler-token-dev created
+# secret/doppler-token-prd created
+```
 
 ---
 
@@ -89,18 +91,6 @@ Doppler Project
 │   └── <SERVICE>_REDIS_PASSWORD
 └── prd/                 → ClusterSecretStore: doppler-prd
     └── <SERVICE>_REDIS_PASSWORD
-```
-
-## Verification
-
-After ArgoCD sync:
-
-```bash
-# Check ClusterSecretStore status
-kubectl get clustersecretstores
-
-# Expected: all stores should be Ready
-kubectl describe clustersecretstore doppler-shared
 ```
 
 ## Troubleshooting

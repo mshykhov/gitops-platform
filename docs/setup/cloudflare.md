@@ -100,10 +100,8 @@ rm ~/.cloudflared/<UUID>.json
 For External-DNS (automatic DNS record management):
 
 1. [API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token**
-2. Select **Create custom token**
+2. Select template **Edit zone DNS** → **Use template**
 3. Configure:
-   - **Token name**: `external-dns`
-   - **Permissions**: Zone → DNS → Edit
    - **Zone Resources**: Include → Specific zone → *your domain*
 4. Click **Continue to summary** → **Create Token**
 5. Copy token (shown only once!) → add `CF_API_TOKEN` to Doppler
