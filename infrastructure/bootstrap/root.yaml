@@ -21,7 +21,7 @@ spec:
   source:
     # CHANGE: Your GitHub repository URL (SSH format)
     # Format: git@github.com:<username>/<repo>.git
-    repoURL: git@github.com:mshykhov/example-infrastructure.git
+    repoURL: <INFRASTRUCTURE_REPO_URL>
     # CHANGE: Branch name
     targetRevision: master
     # Keep as-is: path to apps Helm chart

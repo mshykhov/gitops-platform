@@ -1,9 +1,10 @@
-# Protected Services - Ingress Configuration
-#
+# =============================================================================
+# PROTECTED SERVICES - Ingress Configuration
+# =============================================================================
 # Service parameters:
 #   enabled: bool       - enable/disable ingress
 #   namespace: string   - target namespace
-#   hostname: string    - public domain (enables Cloudflare + External-DNS)
+#   subdomain: string   - public subdomain (enables Cloudflare + External-DNS)
 #   path: string        - ingress path (default: /)
 #   oauth2: bool        - enable OAuth2-Proxy auth (default: true)
 #   websocket: bool     - enable WebSocket support (proxy timeouts 3600s)
@@ -13,8 +14,9 @@
 #   backend.protocol: str - backend protocol (optional, e.g. HTTPS)
 #
 # Routing:
-#   - With hostname: public via Cloudflare Tunnel
-#   - Without hostname: private via Tailscale (name.tailnet.ts.net)
+#   - With subdomain: public via Cloudflare Tunnel ({subdomain}.{global.domain})
+#   - Without subdomain: private via Tailscale ({name}.{tailnet}.ts.net)
+# =============================================================================
 
 # cloudflare.tunnelId comes from global values
 
@@ -24,6 +26,9 @@ oauth2Proxy:
   authResponseHeaders: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Groups"
 
 services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services (Tailscale-only, OAuth2 protected)
+  # ---------------------------------------------------------------------------
   argocd:
     enabled: true
     namespace: argocd
@@ -54,38 +59,34 @@ services:
       name: kube-prometheus-stack-grafana
       port: 80
 
-  example-api-dev:
-    enabled: true
-    oauth2: false
-    namespace: example-api-dev
-    backend:
-      name: example-api-dev
-      port: 8080
+  # ---------------------------------------------------------------------------
+  # Application Services - ADD YOUR SERVICES HERE
+  # ---------------------------------------------------------------------------
+  # Example: DEV environment - Tailscale only (no subdomain = private)
+  # <SERVICE_NAME>-dev:
+  #   enabled: true
+  #   oauth2: false
+  #   namespace: <SERVICE_NAME>-dev
+  #   backend:
+  #     name: <SERVICE_NAME>-dev
+  #     port: 8080
 
-  example-ui-dev:
-    enabled: true
-    oauth2: false
-    namespace: example-ui-dev
-    backend:
-      name: example-ui-dev
-      port: 8080
+  # Example: PRD environment - Public API via Cloudflare (subdomain = public)
+  # <SERVICE_NAME>-prd:
+  #   enabled: true
+  #   oauth2: false
+  #   subdomain: api                          # api.{global.domain}
+  #   namespace: <SERVICE_NAME>-prd
+  #   backend:
+  #     name: <SERVICE_NAME>-prd
+  #     port: 8080
 
-  example-api-prd:
-    enabled: true
-    oauth2: false
-    # Public hostname: api.{global.domain}
-    subdomain: api
-    namespace: example-api-prd
-    backend:
-      name: example-api-prd
-      port: 8080
-
-  example-ui-prd:
-    enabled: true
-    oauth2: false
-    # Public hostname: {global.domain} (root domain)
-    subdomain: ""
-    namespace: example-ui-prd
-    backend:
-      name: example-ui-prd
-      port: 8080
+  # Example: PRD environment - Public UI on root domain
+  # <SERVICE_NAME>-ui-prd:
+  #   enabled: true
+  #   oauth2: false
+  #   subdomain: ""                           # {global.domain} (root)
+  #   namespace: <SERVICE_NAME>-ui-prd
+  #   backend:
+  #     name: <SERVICE_NAME>-ui-prd
+  #     port: 8080
