@@ -39,7 +39,7 @@ global:
   # Tailscale (https://tailscale.com/kb/1236/kubernetes-operator)
   tailnet: <TAILNET_NAME>                     # e.g., tail123456
   tailscale:
-    clientId: <TAILSCALE_CLIENT_ID>           # OAuth client ID
+    clientId: <TS_CLIENT_ID>                   # OAuth client ID
 
   # Auth0 OIDC (https://auth0.com/docs/get-started)
   auth0:
@@ -53,7 +53,7 @@ global:
 
   # Cloudflare Tunnel (https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
   cloudflare:
-    tunnelId: <CLOUDFLARE_TUNNEL_ID>          # UUID from Cloudflare dashboard
+    tunnelId: <CF_TUNNEL_ID>                   # UUID from Cloudflare dashboard
 
   # Telegram Notifications
   # Create bot: https://core.telegram.org/bots#how-do-i-create-a-bot
@@ -67,10 +67,9 @@ global:
       deploys: "<TELEGRAM_TOPIC_DEPLOYS>"     # Topic ID for deploy notifications
 
   # S3-compatible storage (Cloudflare R2, AWS S3, MinIO)
-  # Used by: Velero (backups), CloudNativePG (WAL archiving)
+  # Used by: CloudNativePG (WAL archiving, backups)
   s3:
     endpoint: <S3_ENDPOINT>                   # e.g., https://xxx.r2.cloudflarestorage.com
     region: <S3_REGION>                       # e.g., auto, us-east-1
     buckets:
-      velero: <S3_BUCKET_VELERO>              # Bucket name for Velero backups
-      cnpg: <S3_BUCKET_CNPG>                  # Bucket name for CNPG WAL archives
+      cnpg: <S3_BUCKET_CNPG>                  # Bucket name for CNPG backups
