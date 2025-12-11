@@ -168,13 +168,17 @@ After completing all steps, verify `shared` config contains:
 
 Save as `<GITHUB_USER>/<INFRASTRUCTURE_REPO>` (e.g., `mshykhov/smhomelab-infrastructure`)
 
-### 3.2 Install ArgoCD
+### 3.2 Install ArgoCD (via Helm)
+
+Using Helm chart provides automatic pod restarts when ConfigMaps change.
 
 ```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd -n argocd --create-namespace --wait
 ```
+
+> **Note**: The Helm chart includes built-in mechanism to restart pods when ConfigMaps change (checksum annotations).
 
 ### 3.3 Generate SSH Key
 
