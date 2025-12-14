@@ -55,16 +55,20 @@ install_deps() {
 install_k3s() {
     log_step "Installing k3s"
 
+    # Skip if already installed (use FORCE_K3S_REINSTALL=true to override)
     if command -v k3s &> /dev/null; then
         log_warn "k3s already installed: $(k3s --version | head -1)"
-        read -r -p "Reinstall? (y/N): " choice
-        if [[ ! "$choice" =~ ^[Yy]$ ]]; then return 0; fi
+        if [[ "${FORCE_K3S_REINSTALL:-}" != "true" ]]; then
+            log_info "Skipping k3s install (set FORCE_K3S_REINSTALL=true to reinstall)"
+            return 0
+        fi
+        log_info "FORCE_K3S_REINSTALL=true, reinstalling..."
         /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
     fi
 
     log_info "Installing k3s (--disable traefik,servicelb, --secrets-encryption)..."
 
-    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable=traefik --disable=servicelb --secrets-encryption --write-kubeconfig-mode=600" sh -
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable=traefik --disable=servicelb --secrets-encryption --write-kubeconfig-mode=644" sh -
 
     local i=0
     while [[ $i -lt 30 ]]; do
