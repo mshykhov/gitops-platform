@@ -7,6 +7,7 @@ trap 'rm -rf "$render_dir"' EXIT
 
 cd "$repo_root"
 
+helm repo add victoria-metrics https://victoriametrics.github.io/helm-charts --force-update
 helm dependency build infrastructure/charts/victoria-metrics-k8s-stack
 
 helm lint infrastructure/apps
