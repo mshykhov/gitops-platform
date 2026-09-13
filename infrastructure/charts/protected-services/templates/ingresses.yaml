@@ -1,42 +1,35 @@
 {{- range $name, $service := .Values.services }}
 {{- if $service.enabled }}
 ---
+{{- $publicHost := "" }}
+{{- if hasKey $service "subdomain" }}
+  {{- if eq $service.subdomain "" }}
+    {{- $publicHost = $.Values.global.domain }}
+  {{- else }}
+    {{- $publicHost = printf "%s.%s" $service.subdomain $.Values.global.domain }}
+  {{- end }}
+{{- else if $service.hostname }}
+  {{- $publicHost = $service.hostname }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $name }}
   namespace: {{ $service.namespace }}
   annotations:
-    {{- /* Determine public hostname: subdomain.domain or hostname (legacy) */}}
-    {{- $publicHost := "" }}
-    {{- if hasKey $service "subdomain" }}
-      {{- if eq $service.subdomain "" }}
-        {{- $publicHost = $.Values.global.domain }}
-      {{- else }}
-        {{- $publicHost = printf "%s.%s" $service.subdomain $.Values.global.domain }}
-      {{- end }}
-    {{- else if $service.hostname }}
-      {{- $publicHost = $service.hostname }}
-    {{- end }}
     {{- if $publicHost }}
     external-dns.alpha.kubernetes.io/hostname: {{ $publicHost }}
     external-dns.alpha.kubernetes.io/target: {{ $.Values.global.cloudflare.tunnelId }}.cfargotunnel.com
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     {{- end }}
     {{- if $service.forwardAuth }}
-    nginx.ingress.kubernetes.io/auth-url: {{ $.Values.authentik.authUrl | quote }}
-    nginx.ingress.kubernetes.io/auth-signin: {{ printf "https://%s/outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri" $.Values.authentik.host | quote }}
-    nginx.ingress.kubernetes.io/auth-response-headers: {{ $.Values.authentik.authResponseHeaders | quote }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $service.namespace }}-authentik-auth@kubernetescrd
     {{- end }}
     {{- if $service.backend.protocol }}
-    nginx.ingress.kubernetes.io/backend-protocol: {{ $service.backend.protocol | quote }}
-    {{- end }}
-    {{- if $service.websocket }}
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    traefik.ingress.kubernetes.io/service.serversscheme: {{ lower $service.backend.protocol | quote }}
     {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: {{ if $publicHost }}{{ $publicHost }}{{ else }}{{ $name }}.{{ $.Values.global.tailnet }}.ts.net{{ end }}
       http:
@@ -48,5 +41,29 @@ spec:
                 name: {{ $service.backend.name }}
                 port:
                   number: {{ $service.backend.port }}
+{{- if $service.forwardAuth }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}-logout
+  namespace: {{ $service.namespace }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $service.namespace }}-logout-{{ $name }}@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "200"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ if $publicHost }}{{ $publicHost }}{{ else }}{{ $name }}.{{ $.Values.global.tailnet }}.ts.net{{ end }}
+      http:
+        paths:
+          - path: /logout
+            pathType: Exact
+            backend:
+              service:
+                name: authentik-outpost
+                port:
+                  number: 80
+{{- end }}
 {{- end }}
 {{- end }}

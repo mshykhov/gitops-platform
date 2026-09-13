@@ -1,0 +1,33 @@
+{{- $seenNamespaces := dict }}
+{{- range $name, $service := .Values.services }}
+{{- if and $service.enabled $service.forwardAuth }}
+{{- if not (hasKey $seenNamespaces $service.namespace) }}
+{{- $_ := set $seenNamespaces $service.namespace true }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authentik-auth
+  namespace: {{ $service.namespace }}
+spec:
+  forwardAuth:
+    address: {{ $.Values.authentik.serviceUrl }}/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    maxResponseBodySize: 4194304
+    authResponseHeaders:
+      {{- range splitList "," $.Values.authentik.authResponseHeaders }}
+      - {{ trim . }}
+      {{- end }}
+{{- end }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: logout-{{ $name }}
+  namespace: {{ $service.namespace }}
+spec:
+  redirectRegex:
+    regex: ".*"
+    replacement: "/outpost.goauthentik.io/sign_out"
+{{- end }}
+{{- end }}

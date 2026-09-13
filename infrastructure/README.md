@@ -69,9 +69,21 @@ kubectl port-forward -n authentik service/authentik-server 9000:80
 ```
 
 Visit `http://localhost:9000/if/flow/initial-setup/`. Before enabling
-`forwardAuth`, route a browser-reachable hostname to Authentik, set that hostname
-in `infrastructure/charts/protected-services/values.yaml`, and create only the
-proxy providers and outposts needed by the ingresses you enable.
+`forwardAuth`, add the pod CIDRs used by cloudflared and Tailscale to
+`infrastructure/helm-values/network/traefik.yaml`. Create a proxy provider for
+the exact service host and attach it to Authentik's embedded outpost. Traefik
+then exposes `/outpost.goauthentik.io` on that same host without applying the
+auth middleware, which allows login callbacks to complete.
+
+To expose Authentik itself, enable `services.authentik` in
+`infrastructure/charts/protected-services/values.yaml` after choosing its public
+subdomain. Keep `forwardAuth: false` for the identity provider.
+
+CNPG object-store backups are disabled by default. To opt in, set
+`global.components.cnpgBackups: true`, provide the S3 values and credentials,
+then set `backups.enabled: true` in the database definition. This also installs
+cert-manager and plugin-barman-cloud; the database chart renders the CNPG-I
+ObjectStore, plugin reference, and ScheduledBackup.
 
 ## 3. Install Argo CD and register this repository
 
@@ -98,6 +110,12 @@ kubectl create secret generic repo-gitops \
 kubectl label secret repo-gitops argocd.argoproj.io/secret-type=repository -n argocd
 ```
 
+Image Updater stays disabled with this read-only key. To enable it, grant the
+`repo-gitops` credential write access and set
+`global.components.imageUpdater: true`. It discovers each non-hidden service
+from `deploy/services/<name>/values.yaml` and writes image parameters back to
+Git. Review that access change before enabling the component.
+
 ## 4. Bootstrap and verify
 
 Apply the root Application once:
@@ -123,9 +141,10 @@ self-heal, so ad-hoc cluster edits are temporary.
 ## Adding a service
 
 Copy `deploy/services/.example-service` to `deploy/services/<service-name>` and
-set an image repository and tag that you build. Copy only the database template
-you need into `deploy/databases/<service-name>/`. The ApplicationSets create
-one Application per configured environment.
+set an image repository and tag that you build. Keep only the `values-<env>.yaml`
+files for environments you want. Copy only the database template you need into
+`deploy/databases/<service-name>/`. The ApplicationSets create one Application
+per environment file.
 
 See [the deploy guide](../deploy/README.md) for the chart contract and
 [the architecture guide](../docs/architecture.md) for the source paths.

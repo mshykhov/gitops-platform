@@ -1,5 +1,5 @@
 # Cloudflare Tunnel - Locally Managed
-# All traffic routed to nginx-ingress (catch-all rule)
+# All traffic routed to Traefik (catch-all rule)
 
 tunnel:
   uuid: ""  # Set via global.cloudflare.tunnelId

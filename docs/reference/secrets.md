@@ -52,7 +52,8 @@ These are configured in `infrastructure/apps/values.yaml`, not in Doppler:
 | `global.domain` | `example.com` | Public domain |
 | `global.tailscale.clientId` | `kXXXXX...` | Tailscale OAuth Client ID |
 | `global.components.authentik` | `false` | Enables the Authentik Application and credentials |
-| `authentik.host` in the protected-services chart | `sso.example.com` | Browser-reachable Authentik host used by ForwardAuth redirects |
+| `global.components.imageUpdater` | `false` | Enables image tag write-back to the GitOps repository |
+| `global.components.cnpgBackups` | `false` | Enables cert-manager, Barman Cloud, and CNPG backup credentials |
 | `global.dockerhub.username` | `yourusername` | Docker Hub username |
 | `global.cloudflare.tunnelId` | `xxxxxxxx-xxxx...` | Cloudflare Tunnel UUID |
 | `global.telegram.chatId` | `-100XXXXXXXXXX` | Telegram group chat ID |

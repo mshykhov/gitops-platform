@@ -1,0 +1,11 @@
+serviceName: ""
+imageName: ""
+constraint: ""
+
+envs:
+  - dev
+  - prd
+
+writeBack:
+  method: "git:secret:argocd/repo-gitops"
+  branch: master

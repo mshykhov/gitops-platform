@@ -1,0 +1,53 @@
+deployment:
+  replicas: 1
+
+service:
+  spec:
+    type: ClusterIP
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+ingressRoute:
+  dashboard:
+    enabled: false
+
+providers:
+  kubernetesCRD:
+    enabled: true
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: true
+    publishedService:
+      enabled: false
+    ingressEndpoint:
+      hostname: traefik.traefik.svc.cluster.local
+
+ports:
+  web:
+    forwardedHeaders:
+      # Add the pod CIDRs used by cloudflared and Tailscale before exposing
+      # ForwardAuth-protected routes. Do not trust forwarded headers globally.
+      trustedIPs: []
+    transport:
+      respondingTimeouts:
+        readTimeout: 0
+
+metrics:
+  prometheus:
+    service:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+
+accessLog:
+  enabled: true
+  format: json
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi

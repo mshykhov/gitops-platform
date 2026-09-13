@@ -3,7 +3,7 @@
 # =============================================================================
 # Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 #
-# All traffic routed to nginx-ingress via catch-all rule.
+# All traffic is routed to Traefik through a catch-all rule.
 # DNS records created automatically by External-DNS.
 #
 # Doppler secrets: CF_TUNNEL_CREDENTIALS

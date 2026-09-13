@@ -12,7 +12,8 @@ bootstrap/root.yaml
 infrastructure/apps
   ├── platform Applications -> infrastructure/charts, helm-values, manifests
   └── ApplicationSets
-        ├── services -> deploy/services/*
+        ├── services -> deploy/services/*/values-*.yaml
+        ├── image updates -> deploy/services/*/values.yaml
         ├── PostgreSQL -> deploy/databases/*/postgres/*.yaml
         └── Redis -> deploy/databases/*/redis/*.yaml
 ```
@@ -46,18 +47,23 @@ repository and tag.
 
 | Area | Implemented manifests | Notes |
 | --- | --- | --- |
-| Delivery | Argo CD, Image Updater | Image Updater needs an intentional write credential before use. |
+| Delivery | Argo CD, Image Updater CRs | File-driven service discovery; write-back is opt-in. |
 | Secrets | External Secrets and Doppler stores | Supply your own Doppler tokens and secret names. |
 | Data | CloudNativePG, Redis Operator, Longhorn | Retain only what your workload and storage can support. |
-| Network | Tailscale, Cloudflare Tunnel, External DNS, ingress-nginx | Each requires external account configuration. |
-| Access | Authentik | Opt-in deployment with external CloudNativePG and External Secrets. Providers and outposts are configured after bootstrap. |
+| Network | Tailscale, Cloudflare Tunnel, External DNS, Traefik | Traefik receives both edge paths through a ClusterIP service. |
+| Access | Authentik embedded outpost | Opt-in deployment. Traefik exposes the callback path on every protected host. |
 | Observability | Grafana Alloy, VictoriaMetrics, VictoriaLogs, Grafana | Metrics and logs use separate single-node stores sized for a small cluster. |
 
 Grafana Alloy sends Kubernetes logs to VictoriaLogs through its Loki-compatible
 write endpoint. The VictoriaMetrics operator converts the checked-in
 PrometheusRule and ServiceMonitor resources. The setup intentionally omits
-backup policy, provider automation, custom dashboards, and distributed storage;
-add those only after the basic reconciliation is healthy.
+provider automation, custom dashboards, and distributed storage. CNPG-I backups
+are included as an opt-in contract using cert-manager and plugin-barman-cloud.
+
+Service Applications are generated from environment files, so deleting
+`values-dev.yaml` removes only the dev Application. ImageUpdater resources are
+generated separately from each service's base `values.yaml`; their semver
+write-back targets `image.repository` and `image.tag` in the same monorepo.
 
 ## Operational rule
 

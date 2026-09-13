@@ -1,1 +1,3 @@
-{{- include "library.service" . }}
+{{- include "library.service" (list . "example-service.service") -}}
+{{- define "example-service.service" -}}
+{{- end -}}

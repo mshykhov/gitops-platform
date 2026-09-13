@@ -1,0 +1,5 @@
+apiVersion: v2
+name: image-updater-cr
+description: One ImageUpdater CR generated from a service values file
+type: application
+version: 0.1.0

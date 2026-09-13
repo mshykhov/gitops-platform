@@ -1,0 +1,58 @@
+{{- if .Values.global.components.imageUpdater }}
+# One ImageUpdater CR per deploy/services/<name>/values.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: image-updater-crs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "8"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: {{ .Values.deploy.repoURL }}
+        revision: {{ .Values.deploy.targetRevision }}
+        files:
+          - path: deploy/services/*/values.yaml
+          - path: deploy/services/_*/values.yaml
+            exclude: true
+          - path: deploy/services/.*/values.yaml
+            exclude: true
+  template:
+    metadata:
+      name: 'image-updater-{{`{{ .path.basename }}`}}'
+    spec:
+      project: cicd
+      source:
+        repoURL: {{ .Values.spec.source.repoURL }}
+        targetRevision: {{ .Values.spec.source.targetRevision }}
+        path: infrastructure/charts/image-updater-cr
+        helm:
+          values: |
+            serviceName: {{`{{ .path.basename }}`}}
+            imageName: {{`{{ .image.repository }}`}}
+            constraint: "{{`{{ if hasKey .image "updateConstraint" }}{{ .image.updateConstraint }}{{ end }}`}}"
+            writeBack:
+              branch: {{ .Values.deploy.targetRevision }}
+      destination:
+        server: {{ .Values.spec.destination.server }}
+        namespace: argocd
+      ignoreDifferences:
+        - group: argocd-image-updater.argoproj.io
+          kind: ImageUpdater
+          jqPathExpressions:
+            - .spec.applicationRefs[].useAnnotations
+            - .spec.applicationRefs[].images[].commonUpdateSettings.forceUpdate
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+{{- end }}

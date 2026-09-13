@@ -1,0 +1,55 @@
+{{- $seenNamespaces := dict }}
+{{- range $name, $service := .Values.services }}
+{{- if and $service.enabled $service.forwardAuth }}
+{{- if not (hasKey $seenNamespaces $service.namespace) }}
+{{- $_ := set $seenNamespaces $service.namespace true }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-outpost
+  namespace: {{ $service.namespace }}
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - port: 80
+      targetPort: 80
+{{- end }}
+---
+{{- $publicHost := "" }}
+{{- if hasKey $service "subdomain" }}
+  {{- if eq $service.subdomain "" }}
+    {{- $publicHost = $.Values.global.domain }}
+  {{- else }}
+    {{- $publicHost = printf "%s.%s" $service.subdomain $.Values.global.domain }}
+  {{- end }}
+{{- else if $service.hostname }}
+  {{- $publicHost = $service.hostname }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}-outpost
+  namespace: {{ $service.namespace }}
+  annotations:
+    {{- if $publicHost }}
+    external-dns.alpha.kubernetes.io/hostname: {{ $publicHost }}
+    external-dns.alpha.kubernetes.io/target: {{ $.Values.global.cloudflare.tunnelId }}.cfargotunnel.com
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ if $publicHost }}{{ $publicHost }}{{ else }}{{ $name }}.{{ $.Values.global.tailnet }}.ts.net{{ end }}
+      http:
+        paths:
+          - path: /outpost.goauthentik.io
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-outpost
+                port:
+                  number: 80
+{{- end }}
+{{- end }}

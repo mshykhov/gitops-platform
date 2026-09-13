@@ -71,7 +71,7 @@ spec:
       sources:
         - repoURL: https://cloudnative-pg.github.io/charts
           chart: cluster
-          targetRevision: "0.3.1"
+          targetRevision: "0.8.1"
           helm:
             ignoreMissingValueFiles: true
             valueFiles:
@@ -83,6 +83,7 @@ spec:
               - $deploy/{{`{{ .path.path }}`}}/{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}.yaml
             # S3 config from global values (highest priority)
             values: |
+              {{ if .Values.global.components.cnpgBackups }}
               backups:
                 endpointURL: {{ .Values.global.s3.endpoint }}
                 destinationPath: s3://{{ .Values.global.s3.buckets.cnpg }}/
@@ -95,6 +96,10 @@ spec:
                 s3:
                   region: {{ .Values.global.s3.region }}
                   bucket: {{ .Values.global.s3.buckets.cnpg }}
+              {{ else }}
+              backups:
+                enabled: false
+              {{ end }}
         - repoURL: {{ .Values.deploy.repoURL }}
           targetRevision: {{ .Values.deploy.targetRevision }}
           ref: deploy

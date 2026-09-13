@@ -1,1 +1,3 @@
-{{- include "library.pdb" . }}
+{{- include "library.pdb" (list . "example-service.pdb") -}}
+{{- define "example-service.pdb" -}}
+{{- end -}}

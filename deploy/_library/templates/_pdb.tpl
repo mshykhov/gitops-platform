@@ -1,9 +1,4 @@
-{{/*
-PodDisruptionBudget template
-Docs: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-Auto-enabled when replicaCount > 1, can be disabled with pdb.enabled=false
-*/}}
-{{- define "library.pdb" -}}
+{{- define "library.pdb.tpl" -}}
 {{- $pdbEnabled := true }}
 {{- if .Values.pdb }}
   {{- if eq .Values.pdb.enabled false }}
@@ -29,4 +24,8 @@ spec:
     matchLabels:
       {{- include "library.selectorLabels" . | nindent 6 }}
 {{- end }}
-{{- end }}
+{{- end -}}
+
+{{- define "library.pdb" -}}
+{{- include "library.util.merge" (append . "library.pdb.tpl") -}}
+{{- end -}}

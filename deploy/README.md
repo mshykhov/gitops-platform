@@ -35,11 +35,13 @@ deploy/
 ### 1. Create a new service
 
 ```bash
-# Copy example service
-cp -r services/.example-service services/my-service
+# Run from the repository root.
+cp -r deploy/services/.example-service deploy/services/my-service
 
-# Update Chart.yaml
-sed -i 's/example-service/my-service/g' services/my-service/Chart.yaml
+# Update the chart and named template identifiers (portable on macOS and Linux)
+perl -pi -e 's/example-service/my-service/g' \
+  deploy/services/my-service/Chart.yaml \
+  deploy/services/my-service/templates/*.yaml
 
 # Edit values.yaml with your config
 ```
@@ -72,7 +74,7 @@ resources:
 ### 3. Update Helm dependencies
 
 ```bash
-cd services/my-service
+cd deploy/services/my-service
 helm dependency update
 ```
 
@@ -88,6 +90,11 @@ The `_library` chart provides reusable templates with best practices:
 | `_hpa.tpl` | HorizontalPodAutoscaler | When `autoscaling.enabled: true` |
 | `_pdb.tpl` | PodDisruptionBudget | When `replicaCount > 1` |
 | `_servicemonitor.tpl` | Prometheus ServiceMonitor | When `serviceMonitor.enabled: true` |
+| `_externalsecret.tpl` | ExternalSecret and Deployment `envFrom` | When `secrets.enabled: true` |
+
+Each service template passes an empty named override to the library. Add only
+service-specific fields to that named template; shared Kubernetes structure
+stays in `_library`.
 
 ## Values Reference
 
@@ -179,6 +186,18 @@ extraEnv:
     value: "debug"
 ```
 
+External Secrets can populate the Deployment without duplicating a Secret
+manifest:
+
+```yaml
+secrets:
+  enabled: true
+  secretStore: doppler-prd
+  data:
+    - secretKey: API_TOKEN
+      remoteKey: MY_SERVICE_API_TOKEN
+```
+
 > **Note**: Always use `extraEnv` in environment files (values-dev.yaml, values-prd.yaml) to add variables. If you override `env`, you'll lose base variables defined in values.yaml.
 
 ## Database Configurations
@@ -186,21 +205,21 @@ extraEnv:
 ### PostgreSQL (CloudNativePG)
 
 ```yaml
-# databases/my-service/postgres/main.yaml
+# deploy/databases/my-service/postgres/main.yaml
 cluster:
   name: my-service-db
   instances: 1
   storage:
     size: 5Gi
 
-# databases/my-service/postgres/main-prd.yaml
+# deploy/databases/my-service/postgres/main-prd.yaml
 cluster:
   instances: 2
   storage:
     size: 20Gi
-  backup:
-    enabled: true
-    schedule: "0 2 * * *"
+backups:
+  # Also requires global.components.cnpgBackups and S3 configuration.
+  enabled: true
 ```
 
 ### Redis (OT Operator)
@@ -220,14 +239,15 @@ storage:
 
 Services are deployed via ArgoCD ApplicationSet. Each service needs:
 
-1. **Helm chart** in `services/<name>/`
-2. **ArgoCD source file** `.argocd-source-<name>-<env>.yaml` (auto-generated)
-3. **Database configs** in `databases/<name>/` (optional)
+1. **Helm chart** in `deploy/services/<name>/`
+2. **Environment files** named `values-<env>.yaml`; each file creates one Application
+3. **Database configs** in `deploy/databases/<name>/` (optional)
 
 ArgoCD will:
 - Auto-sync on git push
 - Use `values.yaml` + `values-<env>.yaml`
 - Inject secrets via External Secrets
+- Create ImageUpdater resources from `values.yaml` when Image Updater is enabled
 
 ## Best Practices
 

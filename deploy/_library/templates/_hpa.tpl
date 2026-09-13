@@ -1,7 +1,7 @@
 {{/*
 Base HorizontalPodAutoscaler template
 */}}
-{{- define "library.hpa" -}}
+{{- define "library.hpa.tpl" -}}
 {{- if .Values.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -34,4 +34,8 @@ spec:
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 {{- end }}
+{{- end -}}
+
+{{- define "library.hpa" -}}
+{{- include "library.util.merge" (append . "library.hpa.tpl") -}}
 {{- end -}}

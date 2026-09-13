@@ -5,7 +5,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $name }}-tailscale
-  namespace: ingress-nginx
+  namespace: traefik
   annotations:
     tailscale.com/proxy-group: ingress-proxies
 spec:
@@ -20,7 +20,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: nginx-ingress-ingress-nginx-controller
+                name: traefik
                 port:
                   number: 80
 {{- end }}

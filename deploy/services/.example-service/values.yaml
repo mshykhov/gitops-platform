@@ -12,6 +12,7 @@ replicaCount: 1
 image:
   repository: your-registry/your-service  # Docker image repository
   tag: "0.0.1"                             # Image tag (updated by CI/CD)
+  updateConstraint: ""                     # Optional semver constraint for Image Updater
   pullPolicy: IfNotPresent                 # Always, IfNotPresent, Never
 
 # Registry credentials (if private registry)
@@ -116,6 +117,22 @@ env: []
 # IMPORTANT: Use extraEnv to ADD variables without overriding env[]
 # Both env[] and extraEnv[] are merged in the deployment template
 extraEnv: []
+
+# Optional complete envFrom entries in addition to the generated ExternalSecret.
+envFrom: []
+
+# Optional ExternalSecret. When enabled, its Secret is mounted through envFrom.
+secrets:
+  enabled: false
+  secretStore: doppler-prd
+  refreshInterval: 5m
+  data: []
+  # - secretKey: API_TOKEN
+  #   remoteKey: MY_SERVICE_API_TOKEN
+
+# Optional Deployment strategy and PriorityClass.
+strategy: {}
+priorityClassName: ""
 
 # =============================================================================
 # MONITORING

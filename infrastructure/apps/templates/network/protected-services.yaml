@@ -1,7 +1,7 @@
 # =============================================================================
 # PROTECTED SERVICES
 # =============================================================================
-# Tailscale LoadBalancers and NGINX Ingresses. Authentik protection is opt-in.
+# Tailscale edge routing, Traefik Ingresses, and opt-in Authentik ForwardAuth.
 # Configure in: charts/protected-services/values.yaml
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1

@@ -29,6 +29,12 @@ global:
     # Authentik needs an ExternalSecret and an external PostgreSQL database.
     # Keep it opt-in so a first render never depends on credentials.
     authentik: false
+    # Image Updater writes tags back to Git and therefore needs a write-capable
+    # repository credential named repo-gitops in the argocd namespace.
+    imageUpdater: false
+    # CNPG backups require cert-manager, plugin-barman-cloud, S3 credentials,
+    # and an explicit backups.enabled value in a database definition.
+    cnpgBackups: false
   # Service namespace prefixes (used in ArgoCD project destinations as {prefix}-*)
   # Add your service prefixes here, e.g., myapp, myapp-api, myapp-ui
   servicePrefixes:

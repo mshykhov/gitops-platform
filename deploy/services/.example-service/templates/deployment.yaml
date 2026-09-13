@@ -1,1 +1,3 @@
-{{- include "library.deployment" . }}
+{{- include "library.deployment" (list . "example-service.deployment") -}}
+{{- define "example-service.deployment" -}}
+{{- end -}}

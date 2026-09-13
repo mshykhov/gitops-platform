@@ -1,0 +1,27 @@
+{{- $constraint := .Values.constraint -}}
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: {{ .Values.serviceName }}
+spec:
+  writeBackConfig:
+    method: {{ .Values.writeBack.method | quote }}
+    gitConfig:
+      branch: {{ .Values.writeBack.branch | quote }}
+  applicationRefs:
+{{- range .Values.envs }}
+    {{- $envConstraint := $constraint }}
+    {{- if and (eq . "dev") (not $constraint) }}
+      {{- $envConstraint = ">= 0.0.0-0" }}
+    {{- end }}
+    - namePattern: "{{ $.Values.serviceName }}-{{ . }}"
+      images:
+        - alias: app
+          imageName: "{{ $.Values.imageName }}{{ if $envConstraint }}:{{ $envConstraint }}{{ end }}"
+          commonUpdateSettings:
+            updateStrategy: semver
+          manifestTargets:
+            helm:
+              name: image.repository
+              tag: image.tag
+{{- end }}

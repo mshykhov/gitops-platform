@@ -2,7 +2,7 @@
 ServiceMonitor template for Prometheus Operator
 Docs: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor
 */}}
-{{- define "library.servicemonitor" -}}
+{{- define "library.servicemonitor.tpl" -}}
 {{- if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -23,4 +23,8 @@ spec:
     matchNames:
       - {{ .Release.Namespace }}
 {{- end }}
-{{- end }}
+{{- end -}}
+
+{{- define "library.servicemonitor" -}}
+{{- include "library.util.merge" (append . "library.servicemonitor.tpl") -}}
+{{- end -}}

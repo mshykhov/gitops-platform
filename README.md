@@ -31,10 +31,13 @@ the deploy content into a separate repository.
 
 The active manifests install Argo CD, External Secrets with Doppler,
 CloudNativePG, Longhorn, Redis Operator, Reloader, Tailscale Operator,
-Cloudflare Tunnel, External DNS, ingress-nginx, Grafana Alloy,
+Cloudflare Tunnel, External DNS, Traefik, Grafana Alloy,
 VictoriaMetrics, VictoriaLogs, and Grafana. Authentik is opt-in because it
 requires secrets and an external PostgreSQL cluster. Each component has an
 operational cost, so remove Applications you do not intend to operate.
+
+Image Updater and CNPG object-store backups are opt-in. They perform external
+writes and require repository or S3 credentials before being enabled.
 
 ## Start here
 

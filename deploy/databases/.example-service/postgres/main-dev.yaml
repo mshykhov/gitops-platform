@@ -15,5 +15,5 @@ cluster:
       cpu: 500m
       memory: 256Mi
 
-  backup:
-    enabled: false
+backups:
+  enabled: false

@@ -43,11 +43,14 @@ cluster:
 # =============================================================================
 # BACKUPS - Barman to S3 (Cloudflare R2)
 # =============================================================================
-# Docs: https://cloudnative-pg.io/documentation/current/backup/
+# Backups are opt-in per database and require global.components.cnpgBackups.
 # S3 endpoint/bucket injected from apps/values.yaml via ApplicationSet
 # =============================================================================
 backups:
-  enabled: true
+  enabled: false
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
   provider: s3
   retentionPolicy: "30d"
 
@@ -64,7 +67,9 @@ backups:
     - name: daily
       schedule: "0 0 2 * * *"
       backupOwnerReference: cluster
-      method: barmanObjectStore
+      method: plugin
+      pluginConfiguration:
+        name: barman-cloud.cloudnative-pg.io
 
   data:
     compression: gzip

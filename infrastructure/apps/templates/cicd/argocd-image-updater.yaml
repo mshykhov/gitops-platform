@@ -1,3 +1,4 @@
+{{- if .Values.global.components.imageUpdater }}
 # =============================================================================
 # ARGOCD IMAGE UPDATER - AUTOMATIC CONTAINER IMAGE UPDATES
 # =============================================================================
@@ -22,7 +23,7 @@ spec:
   sources:
     - repoURL: https://argoproj.github.io/argo-helm
       chart: argocd-image-updater
-      targetRevision: "1.0.1"
+      targetRevision: "1.2.4"
       helm:
         valueFiles:
           - $values/infrastructure/helm-values/cicd/argocd-image-updater.yaml
@@ -59,3 +60,4 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+{{- end }}

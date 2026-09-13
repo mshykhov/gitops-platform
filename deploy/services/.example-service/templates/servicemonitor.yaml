@@ -1,1 +1,3 @@
-{{- include "library.servicemonitor" . }}
+{{- include "library.servicemonitor" (list . "example-service.servicemonitor") -}}
+{{- define "example-service.servicemonitor" -}}
+{{- end -}}

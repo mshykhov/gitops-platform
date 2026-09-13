@@ -1,15 +1,7 @@
 # =============================================================================
-# APPLICATIONSET - ALL SERVICES × ALL ENVIRONMENTS
+# APPLICATIONSET - FILE-DRIVEN SERVICE ENVIRONMENTS
 # =============================================================================
-# Docs: https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Matrix/
-# Image Updater: https://argocd-image-updater.readthedocs.io/
-#
-# Matrix Generator creates: deploy/services/* × environments (dev, prd)
-# Result: my-service-dev, my-service-prd, etc.
-#
-# Workflow:
-#   v0.1.0-rc.1 -> builds -> DEV auto-deploy (constraint ~0-0 includes pre-release)
-#   v0.1.0      -> builds -> PRD auto-deploy (constraint ~0 stable only)
+# deploy/services/<name>/values-<env>.yaml exists <=> Application <name>-<env>.
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -22,33 +14,21 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - matrix:
-        generators:
-          # Environments with per-env config
-          - list:
-              elements:
-                - env: dev
-                  # ~0-0: includes pre-release versions (0.1.0-rc.1, 0.1.0-beta.2)
-                  imageConstraint: "~0-0"
-                - env: prd
-                  # ~0: stable versions only (0.1.0, 0.2.0)
-                  imageConstraint: "~0"
-          # Services from deployment repository
-          - git:
-              repoURL: {{ .Values.deploy.repoURL }}
-              revision: {{ .Values.deploy.targetRevision }}
-              directories:
-                - path: deploy/services/*
-                - path: deploy/services/_*
-                  exclude: true
-                - path: deploy/services/.*
-                  exclude: true
+    - git:
+        repoURL: {{ .Values.deploy.repoURL }}
+        revision: {{ .Values.deploy.targetRevision }}
+        files:
+          - path: deploy/services/*/values-*.yaml
+          - path: deploy/services/_*/values-*.yaml
+            exclude: true
+          - path: deploy/services/.*/values-*.yaml
+            exclude: true
   template:
     metadata:
-      name: '{{`{{ .path.basename }}`}}-{{`{{ .env }}`}}'
+      name: '{{`{{ .path.basename }}`}}-{{`{{ trimSuffix ".yaml" (trimPrefix "values-" .path.filename) }}`}}'
       labels:
         app: '{{`{{ .path.basename }}`}}'
-        env: '{{`{{ .env }}`}}'
+        env: '{{`{{ trimSuffix ".yaml" (trimPrefix "values-" .path.filename) }}`}}'
         deploy-notify: "true"
     spec:
       project: applications
@@ -59,13 +39,21 @@ spec:
         helm:
           valueFiles:
             - values.yaml
-            - 'values-{{`{{ .env }}`}}.yaml'
+            - '{{`{{ .path.filename }}`}}'
           valuesObject:
             imagePullSecrets:
               - name: dockerhub-credentials
       destination:
         server: {{ .Values.spec.destination.server }}
-        namespace: '{{`{{ .path.basename }}`}}-{{`{{ .env }}`}}'
+        namespace: '{{`{{ .path.basename }}`}}-{{`{{ trimSuffix ".yaml" (trimPrefix "values-" .path.filename) }}`}}'
+      ignoreDifferences:
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jqPathExpressions:
+            - .spec.data[].remoteRef.conversionStrategy
+            - .spec.data[].remoteRef.decodingStrategy
+            - .spec.data[].remoteRef.metadataPolicy
+            - .spec.target.deletionPolicy
       syncPolicy:
         automated:
           prune: true
@@ -79,7 +67,7 @@ spec:
         managedNamespaceMetadata:
           labels:
             app: '{{`{{ .path.basename }}`}}'
-            env: '{{`{{ .env }}`}}'
+            env: '{{`{{ trimSuffix ".yaml" (trimPrefix "values-" .path.filename) }}`}}'
             tier: application
             team: backend
             dockerhub-pull: "true"
