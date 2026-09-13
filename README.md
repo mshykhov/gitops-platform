@@ -1,109 +1,78 @@
 # GitOps Platform
 
-Example GitOps platform for Kubernetes — a reference implementation for learning and building your own infrastructure.
+A practical Kubernetes GitOps reference built around Argo CD. It is a starting
+point for a small self-managed cluster, not a ready-to-run production
+distribution. You must choose the components you need, provide your own
+repository URL, images, credentials, DNS, and access policy before bootstrapping.
 
-## Features
+## What is here
 
-### GitOps & CI/CD
-- **ArgoCD** — Declarative continuous deployment with App-of-Apps pattern
-- **ArgoCD Image Updater** — Automatic image updates from container registries
-
-### Core Infrastructure
-- **External Secrets** — Secure secrets management with Doppler integration
-- **CloudNative-PG** — Production PostgreSQL clusters with automated failover
-- **Longhorn** — Distributed block storage for persistent volumes
-- **Redis Operator** — Managed Redis clusters
-- **Reloader** — Automatic pod restarts on ConfigMap/Secret changes
-
-### Networking & Security
-- **Cloudflare Tunnel** — Zero-trust access without exposing ports
-- **Tailscale Operator** — Secure mesh networking and kubectl access
-- **NGINX Ingress** — Traffic routing and load balancing
-- **OAuth2 Proxy** — Authentication for internal services via Auth0
-- **External DNS** — Automatic DNS record management
-
-### Observability
-- **Prometheus Stack** — Metrics, alerting, and Grafana dashboards
-- **Loki** — Log aggregation and querying
-- **Grafana Alloy** — Unified telemetry collection
-- **Telegram Alerts** — Real-time notifications for critical events
-
-### Example Applications
-- **Kotlin API** — Spring Boot backend with Auth0 JWT authentication
-- **React UI** — Vite-based frontend with Auth0 integration
-
-## Architecture
+The repository is intentionally a monorepo:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        GitOps Platform                          │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   ArgoCD    │  │   Doppler   │  │      Cloudflare         │  │
-│  │  (GitOps)   │  │  (Secrets)  │  │  (Tunnel + DNS + R2)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ PostgreSQL  │  │    Redis    │  │       Longhorn          │  │
-│  │  (CNPG)     │  │  (Cluster)  │  │       (Storage)         │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ Prometheus  │  │    Loki     │  │        Grafana          │  │
-│  │  (Metrics)  │  │   (Logs)    │  │      (Dashboards)       │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Tailscale  │  │ OAuth2-Proxy│  │    NGINX Ingress        │  │
-│  │  (VPN/SSH)  │  │   (Auth0)   │  │      (Routing)          │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         k3s Cluster                             │
-│  ┌──────────────────┐        ┌──────────────────┐               │
-│  │   example-api    │◄──────►│   example-ui     │               │
-│  │  (Kotlin/Spring) │        │  (React/Vite)    │               │
-│  └──────────────────┘        └──────────────────┘               │
-└─────────────────────────────────────────────────────────────────┘
+infrastructure/                 # Argo CD App-of-Apps and platform components
+  bootstrap/root.yaml           # The one manifest applied by hand
+  apps/                         # Child Applications and ApplicationSets
+  charts/                       # Local Helm charts
+  helm-values/                  # Values for upstream charts
+  manifests/                    # Plain Kubernetes resources
+deploy/                         # Service and database chart templates
+apps/                           # Archived example applications, not deployed
+docs/                           # Setup and operations notes
 ```
 
-## Quick Start
+The root Application reads `infrastructure/apps`. The ApplicationSets then
+discover service charts under `deploy/services` and database definitions under
+`deploy/databases` in the same repository. Set both repository URL fields in
+`infrastructure/apps/values.yaml` to your Git URL unless you deliberately split
+the deploy content into a separate repository.
 
-1. **Server Setup** — Install k3s on your server
-2. **External Services** — Configure Doppler, Cloudflare, Tailscale, Auth0
-3. **Bootstrap ArgoCD** — Install ArgoCD and configure SSH keys
-4. **Deploy** — Apply `bootstrap/root.yaml` and watch everything sync
+## Included platform components
 
-See [infrastructure/README.md](infrastructure/README.md) for detailed setup guide.
+The active manifests install Argo CD, External Secrets with Doppler,
+CloudNativePG, Longhorn, Redis Operator, Reloader, Tailscale Operator,
+Cloudflare Tunnel, External DNS, ingress-nginx, Grafana Alloy,
+VictoriaMetrics, VictoriaLogs, and Grafana. Authentik is opt-in because it
+requires secrets and an external PostgreSQL cluster. Each component has an
+operational cost, so remove Applications you do not intend to operate.
 
-## Repository Structure
+## Start here
 
-```
-├── apps/                    # Example applications
-│   ├── example-api/         # Kotlin Spring Boot API
-│   └── example-ui/          # React Vite frontend
-├── deploy/                  # Application deployment configs
-│   ├── _library/            # Shared Helm templates
-│   ├── databases/           # Database configurations
-│   └── services/            # Service configurations
-├── infrastructure/          # GitOps infrastructure
-│   ├── apps/                # ArgoCD App-of-Apps
-│   ├── bootstrap/           # Entry point (root.yaml)
-│   ├── charts/              # Custom Helm charts
-│   ├── helm-values/         # Values for upstream charts
-│   └── manifests/           # Raw Kubernetes manifests
-├── docs/                    # Documentation
-└── scripts/                 # Utility scripts
-```
+1. Read [the architecture guide](docs/architecture.md) and decide which optional
+   components you will keep.
+2. Fork this repository or create your own private GitOps repository from it.
+3. Edit `infrastructure/apps/values.yaml`: replace every placeholder and use
+   your repository URL for both `spec.source.repoURL` and `deploy.repoURL`.
+   Put the same URL and branch in `infrastructure/bootstrap/root.yaml`.
+4. Prepare the external systems required by the components you kept. The
+   [infrastructure guide](infrastructure/README.md) lists the order and checks.
+5. Install Argo CD, register the repository credential, and apply:
 
-## Documentation
+   ```bash
+   kubectl apply -f infrastructure/bootstrap/root.yaml
+   ```
 
-- [Infrastructure Setup](infrastructure/README.md) — Complete setup guide
-- [Adding New Environment](docs/operations/adding-new-environment.md) — Add dev/stg/prd environments
-- [Secrets Reference](docs/reference/secrets.md) — All secrets and configuration
-- [Alerting Operations](docs/operations/alerting.md) — Managing alerts
+6. Watch the first reconciliation:
+
+   ```bash
+   kubectl get applications -n argocd -w
+   ```
+
+No image is supplied for a real service. Copy the templates under
+`deploy/services/.example-service` and `deploy/databases/.example-service`, set
+an image repository and tag that you build, then commit the configuration.
+
+## Guides
+
+- [Bootstrap and configuration](infrastructure/README.md)
+- [Architecture and repository map](docs/architecture.md)
+- [Deploy chart template](deploy/README.md)
+- [Secrets reference](docs/reference/secrets.md)
+- [Alerting operations](docs/operations/alerting.md)
+
+The `apps/example-api` and `apps/example-ui` directories are retained as
+readable examples. They are outside the GitOps discovery paths and are not
+deployed by the platform.
 
 ## License
 

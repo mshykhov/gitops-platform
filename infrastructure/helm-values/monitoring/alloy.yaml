@@ -2,7 +2,7 @@
 # GRAFANA ALLOY VALUES
 # =============================================================================
 # Docs: https://grafana.com/docs/alloy/latest/
-# Collects Kubernetes pod logs and sends to Loki
+# Collects Kubernetes pod logs and sends to VictoriaLogs through its Loki API.
 # =============================================================================
 
 # Deploy as DaemonSet to collect logs from all nodes
@@ -111,13 +111,13 @@ alloy:
           }
         }
 
-        forward_to = [loki.write.loki.receiver]
+        forward_to = [loki.write.victoria_logs.receiver]
       }
 
-      // Send to Loki
-      loki.write "loki" {
+      // VictoriaLogs accepts the Loki push API.
+      loki.write "victoria_logs" {
         endpoint {
-          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          url = "http://victoria-logs.monitoring.svc.cluster.local:9428/insert/loki/api/v1/push"
         }
       }
 

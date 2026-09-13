@@ -30,7 +30,7 @@ spec:
       targetRevision: "1.90.9"
       helm:
         valueFiles:
-          - $values/helm-values/network/tailscale-operator.yaml
+          - $values/infrastructure/helm-values/network/tailscale-operator.yaml
     - repoURL: {{ .Values.spec.source.repoURL }}
       targetRevision: {{ .Values.spec.source.targetRevision }}
       ref: values

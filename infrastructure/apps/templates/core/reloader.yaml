@@ -23,7 +23,7 @@ spec:
       targetRevision: "2.2.5"
       helm:
         valueFiles:
-          - $values/helm-values/core/reloader.yaml
+          - $values/infrastructure/helm-values/core/reloader.yaml
     - repoURL: {{ .Values.spec.source.repoURL }}
       targetRevision: {{ .Values.spec.source.targetRevision }}
       ref: values

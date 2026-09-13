@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.postgres.name }}
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  instances: 1
+  storage:
+    storageClass: {{ .Values.postgres.storageClass }}
+    size: {{ .Values.postgres.size }}
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+  resources:
+    {{- toYaml .Values.postgres.resources | nindent 4 }}

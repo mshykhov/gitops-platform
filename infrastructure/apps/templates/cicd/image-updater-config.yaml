@@ -20,7 +20,7 @@ spec:
   source:
     repoURL: {{ .Values.spec.source.repoURL }}
     targetRevision: {{ .Values.spec.source.targetRevision }}
-    path: manifests/apps/image-updater
+    path: infrastructure/manifests/apps/image-updater
   destination:
     server: {{ .Values.spec.destination.server }}
     namespace: argocd

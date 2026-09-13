@@ -4,4 +4,3 @@ metadata:
   name: argocd
   labels:
     dockerhub-pull: "true"
-    auth0-oidc: "true"

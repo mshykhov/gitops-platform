@@ -4,17 +4,17 @@
 # Operator: https://redis-operator.opstree.dev/
 # Chart: charts/redis-instance (local)
 #
-# Matrix Generator: databases/*/redis/*.yaml × environments (dev, prd)
+# Matrix Generator: deploy/databases/*/redis/*.yaml × environments (dev, prd)
 # Each microservice can have multiple Redis instances.
 #
 # Structure:
-#   databases/<service>/redis/<instance-name>.yaml
-#   databases/<service>/redis/<instance-name>-<env>.yaml  (optional, per-env overrides)
+#   deploy/databases/<service>/redis/<instance-name>.yaml
+#   deploy/databases/<service>/redis/<instance-name>-<env>.yaml  (optional, per-env overrides)
 #
 # Examples:
-#   databases/example-api/redis/cache.yaml          → base config (all envs)
-#   databases/example-api/redis/cache-dev.yaml      → dev overrides (optional)
-#   databases/example-api/redis/cache-prd.yaml      → prd overrides (optional)
+#   deploy/databases/my-service/redis/cache.yaml          → base config (all envs)
+#   deploy/databases/my-service/redis/cache-dev.yaml      → dev overrides (optional)
+#   deploy/databases/my-service/redis/cache-prd.yaml      → prd overrides (optional)
 #
 # Value precedence (lowest to highest):
 #   1. Environment defaults (helm-values/data/redis-<env>-defaults.yaml)
@@ -57,13 +57,19 @@ spec:
               repoURL: {{ .Values.deploy.repoURL }}
               revision: {{ .Values.deploy.targetRevision }}
               files:
-                - path: databases/*/redis/*.yaml
+                - path: deploy/databases/*/redis/*.yaml
+                - path: deploy/databases/.*/*/*.yaml
+                  exclude: true
+                - path: deploy/databases/*/redis/*-dev.yaml
+                  exclude: true
+                - path: deploy/databases/*/redis/*-prd.yaml
+                  exclude: true
   template:
     metadata:
-      # service-instance-redis-env (e.g., example-api-cache-redis-dev)
-      name: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-redis-{{`{{ .env }}`}}'
+      # service-instance-redis-env (e.g., my-service-cache-redis-dev)
+      name: '{{`{{ index .path.segments 2 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-redis-{{`{{ .env }}`}}'
       labels:
-        app: '{{`{{ index .path.segments 1 }}`}}'
+        app: '{{`{{ index .path.segments 2 }}`}}'
         instance: '{{`{{ trimSuffix ".yaml" .path.filename }}`}}'
         env: '{{`{{ .env }}`}}'
         type: redis
@@ -72,9 +78,9 @@ spec:
       sources:
         - repoURL: {{ .Values.spec.source.repoURL }}
           targetRevision: {{ .Values.spec.source.targetRevision }}
-          path: charts/redis-instance
+          path: infrastructure/charts/redis-instance
           helm:
-            releaseName: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}'
+            releaseName: '{{`{{ index .path.segments 2 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}'
             ignoreMissingValueFiles: true
             valueFiles:
               # 1. Environment defaults (base)
@@ -84,13 +90,13 @@ spec:
               # 3. Service + env config (optional, highest priority)
               - $deploy/{{`{{ .path.path }}`}}/{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}.yaml
             values: |
-              name: {{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}
+              name: {{`{{ index .path.segments 2 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-{{`{{ .env }}`}}
         - repoURL: {{ .Values.deploy.repoURL }}
           targetRevision: {{ .Values.deploy.targetRevision }}
           ref: deploy
       destination:
         server: {{ .Values.spec.destination.server }}
-        namespace: '{{`{{ index .path.segments 1 }}`}}-{{`{{ .env }}`}}'
+        namespace: '{{`{{ index .path.segments 2 }}`}}-{{`{{ .env }}`}}'
       ignoreDifferences:
         - group: ""
           kind: Secret
@@ -108,7 +114,7 @@ spec:
           selfHeal: true
         managedNamespaceMetadata:
           labels:
-            app: '{{`{{ index .path.segments 1 }}`}}'
+            app: '{{`{{ index .path.segments 2 }}`}}'
             env: '{{`{{ .env }}`}}'
             tier: application
             team: backend

@@ -84,7 +84,9 @@ kubectl create namespace external-secrets
 ```
 Doppler Project
 ├── shared/              → ClusterSecretStore: doppler-shared
-│   ├── AUTH0_CLIENT_SECRET
+│   ├── AUTHENTIK_SECRET_KEY
+│   ├── AUTHENTIK_BOOTSTRAP_PASSWORD
+│   ├── AUTHENTIK_BOOTSTRAP_EMAIL
 │   ├── CF_TUNNEL_CREDENTIALS
 │   └── ...
 ├── dev/                 → ClusterSecretStore: doppler-dev

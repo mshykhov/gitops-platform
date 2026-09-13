@@ -22,7 +22,7 @@ spec:
   source:
     repoURL: {{ .Values.spec.source.repoURL }}
     targetRevision: {{ .Values.spec.source.targetRevision }}
-    path: charts/cloudflare-tunnel
+    path: infrastructure/charts/cloudflare-tunnel
     helm:
       valuesObject:
         tunnel:

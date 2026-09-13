@@ -11,20 +11,24 @@ spec:
   destination:
     server: https://kubernetes.default.svc
   source:
-    repoURL: <INFRASTRUCTURE_REPO_URL>        # git@github.com:username/infrastructure.git
+    repoURL: <GITOPS_REPO_URL>                # git@github.com:username/gitops-platform.git
     targetRevision: master
 
 # -----------------------------------------------------------------------------
-# Deploy Repository - contains service Helm charts
+# Deploy source - the same monorepo by default; it can be extracted later.
 # -----------------------------------------------------------------------------
 deploy:
-  repoURL: <DEPLOY_REPO_URL>                  # git@github.com:username/deploy.git
+  repoURL: <GITOPS_REPO_URL>                  # git@github.com:username/gitops-platform.git
   targetRevision: master
 
 # -----------------------------------------------------------------------------
 # Global Configuration (shared across all apps)
 # -----------------------------------------------------------------------------
 global:
+  components:
+    # Authentik needs an ExternalSecret and an external PostgreSQL database.
+    # Keep it opt-in so a first render never depends on credentials.
+    authentik: false
   # Service namespace prefixes (used in ArgoCD project destinations as {prefix}-*)
   # Add your service prefixes here, e.g., myapp, myapp-api, myapp-ui
   servicePrefixes:
@@ -40,12 +44,6 @@ global:
   tailnet: <TAILNET_NAME>                     # e.g., tail123456
   tailscale:
     clientId: <TS_CLIENT_ID>                   # OAuth client ID
-
-  # Auth0 OIDC (https://auth0.com/docs/get-started)
-  auth0:
-    domain: <AUTH0_DOMAIN>                    # e.g., dev-xxx.us.auth0.com
-    clientId: <AUTH0_CLIENT_ID>               # Application client ID
-    groupsClaim: <AUTH0_GROUPS_CLAIM>         # Custom claim for groups (e.g., https://myapp/groups)
 
   # Docker Hub
   dockerhub:

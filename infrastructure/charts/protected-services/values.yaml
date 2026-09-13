@@ -6,9 +6,8 @@
 #   namespace: string   - target namespace
 #   subdomain: string   - public subdomain (enables Cloudflare + External-DNS)
 #   path: string        - ingress path (default: /)
-#   oauth2: bool        - enable OAuth2-Proxy auth (default: true)
+#   forwardAuth: bool   - enable Authentik ForwardAuth
 #   websocket: bool     - enable WebSocket support (proxy timeouts 3600s)
-#   allowedGroups: []   - Auth0 groups for access control
 #   backend.name: str   - service name
 #   backend.port: int   - service port
 #   backend.protocol: str - backend protocol (optional, e.g. HTTPS)
@@ -20,43 +19,38 @@
 
 # cloudflare.tunnelId comes from global values
 
-oauth2Proxy:
-  authUrl: "http://oauth2-proxy.oauth2-proxy.svc.cluster.local/oauth2/auth"
-  authSignin: "https://$host/oauth2/start?rd=$escaped_request_uri"
-  authResponseHeaders: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Groups"
+authentik:
+  host: ""
+  authUrl: "http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/nginx"
+  authResponseHeaders: "X-authentik-username,X-authentik-groups,X-authentik-email"
 
 services:
   # ---------------------------------------------------------------------------
-  # Infrastructure Services (Tailscale-only, OAuth2 protected)
+  # Infrastructure services start disabled. Enable only after creating an
+  # Authentik proxy provider and outpost for the service.
   # ---------------------------------------------------------------------------
   argocd:
-    enabled: true
+    enabled: false
     namespace: argocd
-    allowedGroups:
-      - infra-admins
-      - argocd-admins
+    forwardAuth: true
     backend:
       name: argocd-server
       port: 80
 
   longhorn:
-    enabled: true
+    enabled: false
     namespace: longhorn-system
-    allowedGroups:
-      - infra-admins
-      - longhorn-admins
+    forwardAuth: true
     backend:
       name: longhorn-frontend
       port: 80
 
   grafana:
-    enabled: true
+    enabled: false
     namespace: monitoring
-    allowedGroups:
-      - infra-admins
-      - monitoring-admins
+    forwardAuth: true
     backend:
-      name: kube-prometheus-stack-grafana
+      name: victoria-metrics-k8s-stack-grafana
       port: 80
 
   # ---------------------------------------------------------------------------
@@ -65,7 +59,7 @@ services:
   # Example: DEV environment - Tailscale only (no subdomain = private)
   # <SERVICE_NAME>-dev:
   #   enabled: true
-  #   oauth2: false
+  #   forwardAuth: false
   #   namespace: <SERVICE_NAME>-dev
   #   backend:
   #     name: <SERVICE_NAME>-dev
@@ -74,7 +68,7 @@ services:
   # Example: PRD environment - Public API via Cloudflare (subdomain = public)
   # <SERVICE_NAME>-prd:
   #   enabled: true
-  #   oauth2: false
+  #   forwardAuth: false
   #   subdomain: api                          # api.{global.domain}
   #   namespace: <SERVICE_NAME>-prd
   #   backend:
@@ -84,7 +78,7 @@ services:
   # Example: PRD environment - Public UI on root domain
   # <SERVICE_NAME>-ui-prd:
   #   enabled: true
-  #   oauth2: false
+  #   forwardAuth: false
   #   subdomain: ""                           # {global.domain} (root)
   #   namespace: <SERVICE_NAME>-ui-prd
   #   backend:

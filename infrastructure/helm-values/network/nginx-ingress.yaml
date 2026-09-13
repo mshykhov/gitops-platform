@@ -13,9 +13,8 @@ controller:
     enabled: true
     default: true
 
-  # Enable for oauth2-proxy auth annotations
+  # Enable snippets only if your ingress policy requires them.
   # WARNING: allow-snippet-annotations enables server-snippet in ingress annotations.
-  # Required for oauth2-proxy logout redirect (see protected-services/templates/ingresses.yaml).
   # Risk: Untrusted ingress definitions could inject arbitrary nginx config.
   # Mitigation: Only trusted admins can create Ingress resources (RBAC).
   config:

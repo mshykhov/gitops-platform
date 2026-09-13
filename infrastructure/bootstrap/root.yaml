@@ -7,7 +7,7 @@
 # Docs: https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/
 #
 # Usage:
-#   kubectl apply -f bootstrap/root.yaml
+#   kubectl apply -f infrastructure/bootstrap/root.yaml
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -21,11 +21,11 @@ spec:
   source:
     # CHANGE: Your GitHub repository URL (SSH format)
     # Format: git@github.com:<username>/<repo>.git
-    repoURL: <INFRASTRUCTURE_REPO_URL>
+    repoURL: <GITOPS_REPO_URL>
     # CHANGE: Branch name
     targetRevision: master
-    # Keep as-is: path to apps Helm chart
-    path: apps
+    # Keep as-is: path to the App-of-Apps chart in this monorepo
+    path: infrastructure/apps
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

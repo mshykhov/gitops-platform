@@ -27,7 +27,7 @@ spec:
       targetRevision: "0.26.1"
       helm:
         valueFiles:
-          - $values/helm-values/core/cloudnative-pg.yaml
+          - $values/infrastructure/helm-values/core/cloudnative-pg.yaml
     - repoURL: {{ .Values.spec.source.repoURL }}
       targetRevision: {{ .Values.spec.source.targetRevision }}
       ref: values

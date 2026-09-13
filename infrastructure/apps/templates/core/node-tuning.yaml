@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: {{ .Values.spec.source.repoURL }}
     targetRevision: {{ .Values.spec.source.targetRevision }}
-    path: manifests/core/node-tuning
+    path: infrastructure/manifests/core/node-tuning
   destination:
     server: {{ .Values.spec.destination.server }}
     namespace: kube-system

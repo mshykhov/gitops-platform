@@ -8,7 +8,6 @@ metadata:
   name: {{ include "redis-instance.fullname" . }}
   labels:
     {{- include "redis-instance.labels" . | nindent 4 }}
-    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:

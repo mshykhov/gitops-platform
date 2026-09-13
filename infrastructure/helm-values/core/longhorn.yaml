@@ -3,8 +3,6 @@
 metrics:
   serviceMonitor:
     enabled: true
-    additionalLabels:
-      release: kube-prometheus-stack
 
 longhornUI:
   replicas: 1

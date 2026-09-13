@@ -2,8 +2,8 @@
 # ARGOCD CONFIGURATION
 # =============================================================================
 # Manages ArgoCD configuration via GitOps:
-# - OIDC with Auth0 (native login/logout)
-# - RBAC (admin access for specific users/groups)
+# - Safe local-login defaults
+# - RBAC baseline
 # - Server params (timeouts, insecure mode)
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
@@ -20,7 +20,7 @@ spec:
   source:
     repoURL: {{ .Values.spec.source.repoURL }}
     targetRevision: {{ .Values.spec.source.targetRevision }}
-    path: charts/argocd-config
+    path: infrastructure/charts/argocd-config
     helm:
       valuesObject:
         spec:
@@ -31,9 +31,6 @@ spec:
         global:
           servicePrefixes: {{ .Values.global.servicePrefixes | toYaml | nindent 12 }}
           tailnet: {{ .Values.global.tailnet }}
-          auth0:
-            domain: {{ .Values.global.auth0.domain }}
-            clientId: {{ .Values.global.auth0.clientId }}
           telegram:
             chatId: {{ .Values.global.telegram.chatId | quote }}
             topics:

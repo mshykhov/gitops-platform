@@ -1,0 +1,21 @@
+name: Validate GitOps manifests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  helm-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.2.4
+      - name: Render and validate charts
+        run: bash scripts/validate-gitops.sh

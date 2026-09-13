@@ -28,6 +28,7 @@ id_rsa*
 # Helm
 **/charts/*.tgz
 **/Chart.lock
+!infrastructure/charts/victoria-metrics-k8s-stack/Chart.lock
 
 # Temporary
 *.tmp

@@ -1,4 +1,4 @@
-# ArgoCD config values (RBAC handled by oauth2-proxy)
+# Argo CD configuration values
 argocd: {}
 
 global:

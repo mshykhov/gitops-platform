@@ -6,8 +6,6 @@ kind: PrometheusRule
 metadata:
   name: cnpg-alerts
   namespace: monitoring
-  labels:
-    release: kube-prometheus-stack
 spec:
   groups:
     - name: cnpg.rules

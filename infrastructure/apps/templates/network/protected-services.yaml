@@ -1,7 +1,7 @@
 # =============================================================================
 # PROTECTED SERVICES
 # =============================================================================
-# Tailscale LoadBalancers + NGINX Ingresses + oauth2-proxy for internal services
+# Tailscale LoadBalancers and NGINX Ingresses. Authentik protection is opt-in.
 # Configure in: charts/protected-services/values.yaml
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
@@ -18,15 +18,12 @@ spec:
   source:
     repoURL: {{ .Values.spec.source.repoURL }}
     targetRevision: {{ .Values.spec.source.targetRevision }}
-    path: charts/protected-services
+    path: infrastructure/charts/protected-services
     helm:
       valuesObject:
         global:
           tailnet: {{ .Values.global.tailnet }}
           domain: {{ .Values.global.domain }}
-          auth0:
-            domain: {{ .Values.global.auth0.domain }}
-            clientId: {{ .Values.global.auth0.clientId }}
           cloudflare:
             tunnelId: {{ .Values.global.cloudflare.tunnelId }}
   destination:

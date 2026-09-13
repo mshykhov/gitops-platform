@@ -3,24 +3,21 @@
 ## Architecture
 
 ```
-Prometheus → AlertManager ─┬→ Telegram (all alerts by severity)
-                           └→ Pushover (critical only, emergency priority)
+VictoriaMetrics → VMAlert → VMAlertmanager → configured receivers
 ```
 
 ## Routing
 
-| Severity | Telegram | Pushover |
-|----------|----------|----------|
-| critical | topic #2 | emergency (priority 2), tugboat sound |
-| warning  | topic #5 | - |
-| info     | topic #7 | - |
+Receiver routing is deployment-specific. Store receiver credentials in your
+secret manager and add a `VMAlertmanagerConfig` or a managed configuration
+after deciding which notification service you will operate.
 
 ## Test Alerts
 
 ### Send test critical alert
 
 ```bash
-kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernetes.io/name=alertmanager -o jsonpath='{.items[0].metadata.name}') -- \
+kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernetes.io/name=vmalertmanager -o jsonpath='{.items[0].metadata.name}') -- \
   amtool alert add TestCriticalAlert severity=critical namespace=test \
   --annotation.summary="Test critical alert for Pushover"
 ```
@@ -28,7 +25,7 @@ kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernete
 ### Send test via API
 
 ```bash
-kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernetes.io/name=alertmanager -o jsonpath='{.items[0].metadata.name}') -- \
+kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernetes.io/name=vmalertmanager -o jsonpath='{.items[0].metadata.name}') -- \
   wget -q -O- --post-data='[
     {
       "labels": {
@@ -45,15 +42,6 @@ kubectl exec -n monitoring -it $(kubectl get pods -n monitoring -l app.kubernete
   http://localhost:9093/api/v2/alerts
 ```
 
-### Expected result
-
-- Pushover: `🚨 smhomelab: TestCriticalAlert` (emergency, tugboat sound)
-- Telegram: `🔴 TestCriticalAlert` (critical topic)
-
-## Secrets (Doppler)
-
-```
-PUSHOVER_API_TOKEN  # Pushover application API token
-PUSHOVER_USER_KEY   # Pushover user key
-TELEGRAM_BOT_TOKEN  # Telegram bot token
-```
+Confirm the alert appears in VMAlertmanager and reaches the receiver you
+configured. The repository does not ship notification credentials or a default
+external receiver.

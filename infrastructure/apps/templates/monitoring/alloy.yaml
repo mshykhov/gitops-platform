@@ -3,7 +3,7 @@
 # =============================================================================
 # Docs: https://grafana.com/docs/alloy/latest/
 #
-# Replaces Promtail (deprecated). Collects logs and sends to Loki.
+# Collects logs and sends them to VictoriaLogs.
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -11,7 +11,7 @@ metadata:
   name: alloy
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "33"
+    argocd.argoproj.io/sync-wave: "32"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -22,7 +22,7 @@ spec:
       targetRevision: "1.4.0"
       helm:
         valueFiles:
-          - $values/helm-values/monitoring/alloy.yaml
+          - $values/infrastructure/helm-values/monitoring/alloy.yaml
         valuesObject:
           global:
             cluster: {{ .Values.global.cluster }}

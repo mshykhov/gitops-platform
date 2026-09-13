@@ -8,5 +8,4 @@ metadata:
     app.kubernetes.io/part-of: argocd
 data:
   url: https://argocd.{{ .Values.global.tailnet }}.ts.net
-  # Anonymous access enabled - authentication handled by oauth2-proxy
-  users.anonymous.enabled: "true"
+  users.anonymous.enabled: "false"

@@ -5,8 +5,6 @@ kind: PrometheusRule
 metadata:
   name: longhorn-alerts
   namespace: monitoring
-  labels:
-    release: kube-prometheus-stack
 spec:
   groups:
     - name: longhorn.rules

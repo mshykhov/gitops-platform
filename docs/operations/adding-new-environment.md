@@ -4,9 +4,8 @@ This guide explains how to add a new environment (e.g., `stg`) to the platform.
 
 ## Prerequisites
 
-- Access to infrastructure and deploy repositories
+- Access to the GitOps repository
 - Doppler project access
-- Auth0 tenant access (if environment needs authentication)
 
 ## Steps
 
@@ -16,9 +15,9 @@ Update the environment list in **3 ApplicationSet files**:
 
 | File | Path |
 |------|------|
-| Services | `apps/templates/services/services-appset.yaml` |
-| PostgreSQL | `apps/templates/data/postgres-clusters.yaml` |
-| Redis | `apps/templates/data/redis-clusters.yaml` |
+| Services | `infrastructure/apps/templates/services/services-appset.yaml` |
+| PostgreSQL | `infrastructure/apps/templates/data/postgres-clusters.yaml` |
+| Redis | `infrastructure/apps/templates/data/redis-clusters.yaml` |
 
 Add your environment to the `list.elements`:
 
@@ -176,7 +175,7 @@ env:
 1. Open [Doppler Dashboard](https://dashboard.doppler.com)
 2. Navigate to your project
 3. Click **Add Config** → name it `stg`
-4. Add required secrets (see [README - Required Secrets](../infrastructure/README.md#required-secrets---devprd-configs))
+4. Add required secrets from the [secrets reference](../reference/secrets.md)
 5. Generate Service Token (Access → Service Tokens)
 6. Create K8s secret:
 
@@ -186,26 +185,24 @@ kubectl create secret generic doppler-token-stg \
   --from-literal=dopplerToken="dp.st.stg.XXXX"
 ```
 
-### 7. Auth0 (if needed)
+### 7. Protected access (if needed)
 
-If the new environment requires authentication:
-
-1. Open [Auth0 Dashboard](https://manage.auth0.com)
-2. Go to **Applications** → **Create Application**
-3. Configure callback URLs for the new environment
-4. Add the new URLs to `whitelist_domains` in OAuth2 Proxy config
+If the new environment needs browser authentication, create an Authentik proxy
+provider and attach it to an outpost. Then enable `forwardAuth` for the ingress
+in `infrastructure/charts/protected-services/values.yaml`.
 
 ## Optional
 
 ### Ingress Access
 
-To expose services in the new environment, edit `charts/protected-services/values.yaml`:
+To expose services in the new environment, edit
+`infrastructure/charts/protected-services/values.yaml`:
 
 ```yaml
 services:
   myservice-stg:
     enabled: true
-    oauth2: false
+    forwardAuth: false
     namespace: myservice-stg
     backend:
       name: myservice-stg
@@ -225,5 +222,5 @@ To enable automatic deployments, create `manifests/apps/image-updater/<service>.
 - [ ] Created service values in deploy repo
 - [ ] Created Doppler config with secrets
 - [ ] Created doppler-token-stg K8s secret
-- [ ] Configured Auth0 (if needed)
+- [ ] Configured Authentik provider and outpost (if needed)
 - [ ] Synced ArgoCD

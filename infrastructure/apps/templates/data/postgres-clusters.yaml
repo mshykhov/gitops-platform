@@ -4,17 +4,17 @@
 # Docs: https://cloudnative-pg.io/documentation/current/
 # Chart: https://github.com/cloudnative-pg/charts/tree/main/charts/cluster
 #
-# Matrix Generator: databases/*/postgres/*.yaml × environments (dev, prd)
+# Matrix Generator: deploy/databases/*/postgres/*.yaml × environments (dev, prd)
 # Each microservice can have multiple PostgreSQL clusters.
 #
 # Structure:
-#   databases/<service>/postgres/<db-name>.yaml
-#   databases/<service>/postgres/<db-name>-<env>.yaml  (optional, per-env overrides)
+#   deploy/databases/<service>/postgres/<db-name>.yaml
+#   deploy/databases/<service>/postgres/<db-name>-<env>.yaml  (optional, per-env overrides)
 #
 # Examples:
-#   databases/example-api/postgres/main.yaml          → base config (all envs)
-#   databases/example-api/postgres/main-dev.yaml      → dev overrides (optional)
-#   databases/example-api/postgres/main-prd.yaml      → prd overrides (optional)
+#   deploy/databases/my-service/postgres/main.yaml          → base config (all envs)
+#   deploy/databases/my-service/postgres/main-dev.yaml      → dev overrides (optional)
+#   deploy/databases/my-service/postgres/main-prd.yaml      → prd overrides (optional)
 #
 # Value precedence (lowest to highest):
 #   1. Environment defaults (helm-values/data/postgres-<env>-defaults.yaml)
@@ -50,13 +50,19 @@ spec:
               repoURL: {{ .Values.deploy.repoURL }}
               revision: {{ .Values.deploy.targetRevision }}
               files:
-                - path: databases/*/postgres/*.yaml
+                - path: deploy/databases/*/postgres/*.yaml
+                - path: deploy/databases/.*/*/*.yaml
+                  exclude: true
+                - path: deploy/databases/*/postgres/*-dev.yaml
+                  exclude: true
+                - path: deploy/databases/*/postgres/*-prd.yaml
+                  exclude: true
   template:
     metadata:
-      # service-dbname-db-env (e.g., example-api-main-db-dev)
-      name: '{{`{{ index .path.segments 1 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-db-{{`{{ .env }}`}}'
+      # service-dbname-db-env (e.g., my-service-main-db-dev)
+      name: '{{`{{ index .path.segments 2 }}`}}-{{`{{ trimSuffix ".yaml" .path.filename }}`}}-db-{{`{{ .env }}`}}'
       labels:
-        app: '{{`{{ index .path.segments 1 }}`}}'
+        app: '{{`{{ index .path.segments 2 }}`}}'
         database: '{{`{{ trimSuffix ".yaml" .path.filename }}`}}'
         env: '{{`{{ .env }}`}}'
         type: postgres
@@ -70,7 +76,7 @@ spec:
             ignoreMissingValueFiles: true
             valueFiles:
               # 1. Environment defaults (base)
-              - $infra/helm-values/data/postgres-{{`{{ .env }}`}}-defaults.yaml
+              - $infra/infrastructure/helm-values/data/postgres-{{`{{ .env }}`}}-defaults.yaml
               # 2. Service config (overrides defaults)
               - $deploy/{{`{{ .path.path }}`}}/{{`{{ .path.filename }}`}}
               # 3. Service + env config (optional, highest priority)
@@ -97,14 +103,14 @@ spec:
           ref: infra
       destination:
         server: {{ .Values.spec.destination.server }}
-        namespace: '{{`{{ index .path.segments 1 }}`}}-{{`{{ .env }}`}}'
+        namespace: '{{`{{ index .path.segments 2 }}`}}-{{`{{ .env }}`}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         managedNamespaceMetadata:
           labels:
-            app: '{{`{{ index .path.segments 1 }}`}}'
+            app: '{{`{{ index .path.segments 2 }}`}}'
             env: '{{`{{ .env }}`}}'
             tier: application
             team: backend

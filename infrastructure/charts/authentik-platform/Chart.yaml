@@ -1,0 +1,5 @@
+apiVersion: v2
+name: authentik-platform
+description: External PostgreSQL resource for Authentik
+type: application
+version: 0.1.0

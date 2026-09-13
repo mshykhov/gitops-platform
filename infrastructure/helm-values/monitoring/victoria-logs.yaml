@@ -1,0 +1,16 @@
+server:
+  fullnameOverride: victoria-logs
+  retentionPeriod: 7d
+  retentionDiskSpaceUsage: 8GiB
+  persistentVolume:
+    enabled: true
+    storageClassName: longhorn
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+vector:
+  enabled: false

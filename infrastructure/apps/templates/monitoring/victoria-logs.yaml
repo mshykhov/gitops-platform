@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoria-logs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "31"
+spec:
+  project: monitoring
+  sources:
+    - repoURL: https://victoriametrics.github.io/helm-charts
+      chart: victoria-logs-single
+      targetRevision: "0.13.9"
+      helm:
+        valueFiles:
+          - $values/infrastructure/helm-values/monitoring/victoria-logs.yaml
+    - repoURL: {{ .Values.spec.source.repoURL }}
+      targetRevision: {{ .Values.spec.source.targetRevision }}
+      ref: values
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

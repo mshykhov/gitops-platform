@@ -24,7 +24,7 @@ spec:
       targetRevision: "1.10.1"
       helm:
         valueFiles:
-          - $values/helm-values/core/longhorn.yaml
+          - $values/infrastructure/helm-values/core/longhorn.yaml
         valuesObject:
           preUpgradeChecker:
             jobEnabled: false

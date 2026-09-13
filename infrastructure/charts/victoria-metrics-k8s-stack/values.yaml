@@ -1,0 +1,30 @@
+victoria-metrics-k8s-stack:
+  vmsingle:
+    spec:
+      retentionPeriod: 14d
+      storage:
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 10Gi
+  vmagent:
+    spec:
+      scrapeInterval: 30s
+  grafana:
+    enabled: true
+    ingress:
+      enabled: false
+    persistence:
+      enabled: true
+      storageClassName: longhorn
+      size: 5Gi
+  alertmanager:
+    enabled: true
+    spec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            resources:
+              requests:
+                storage: 2Gi
